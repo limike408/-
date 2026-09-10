@@ -1,0 +1,89 @@
+# 数学建模竞赛 · 最终版 .gitignore
+# 适配：Python / R / MATLAB / LaTeX / Office
+# 核心规则：只忽略垃圾缓存、编译产物、本地配置
+# 【完全保留】Word/PPT/Excel/代码/论文/图表 所有正式成果文件
+
+# ==================== 系统垃圾 ====================
+.DS_Store
+__MACOSX
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ==================== Office 专属（只过滤临时锁文件） ====================
+# 不屏蔽任何正式 .docx .pptx .xlsx .pdf 成果文件
+~$*.doc*
+~$*.xls*
+~$*.ppt*
+
+# ==================== Python 缓存 & 环境 ====================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+.env
+.env.*
+.ipynb_checkpoints/
+
+# ==================== MATLAB 临时文件 ====================
+*.asv
+*.m~
+*.slx.old
+slprj/
+simulink_cache/
+
+# ==================== R语言 缓存 ====================
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj.user/
+Rplots.pdf
+*.rds
+*.rda
+
+# ==================== LaTeX 编译垃圾（最重要） ====================
+# 只删编译临时文件，绝不删除 .tex .pdf 成品
+*.aux
+*.log
+*.out
+*.tmp
+*.bak
+*.bbl
+*.blg
+*.dvi
+*.lof
+*.lot
+*.toc
+*.synctex.gz
+*.synctex(busy)
+
+# ==================== 大型模型/日志（防止仓库爆炸） ====================
+*.pth
+*.ckpt
+*.h5
+*.onnx
+checkpoints/
+model_cache/
+logs/
+train_log/
+raw_big_data/
+output_result/
+
+# ==================== IDE 本地配置（不共享） ====================
+.vscode/
+.idea/
+*.iml
+.rstudio-desktop/
+*.swp
+*.swo
+
+# ==================== 隐私配置 ====================
+local_config.py
+*.key
+*.secret
+private/
