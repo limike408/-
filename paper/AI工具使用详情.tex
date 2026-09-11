@@ -1,0 +1,45 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{booktabs}
+\usepackage[margin=2.2cm]{geometry}
+\pagestyle{plain}
+\begin{document}
+
+\begin{center}
+    {\LARGE\bfseries AI 工具使用详情}\\[0.6em]
+    {\normalsize （2026 年高教社杯全国大学生数学建模竞赛）}\\[0.2em]
+    {\normalsize 2026-09-13}
+\end{center}
+
+\section{所用 AI 工具名称、版本或型号}
+竞赛期间主要使用了如下 AI 工具，用于代码实现、调试与文档排版辅助：
+\begin{itemize}
+    \item \textbf{IDE 编程助手（Trae，DeepSeek-V4-Flash 模型）}：辅助编写、检查与调试 Python 求解脚本，辅助 LaTeX 论文排版；
+    \item \textbf{Python 科学计算环境（scipy / numpy / pandas / openpyxl / matplotlib）}：模型求解与结果输出（非 AI 工具，仅说明求解平台）；
+    \item \textbf{排版工具（XeLaTeX + cumcmthesis 模板）}：论文编译。
+\end{itemize}
+
+\section{具体使用目的和环节}
+AI 工具的使用贯穿竞赛的代码实现与论文撰写环节，具体如下：
+\begin{itemize}
+    \item \textbf{代码编写与调试}：用于实现线性规划/两阶段随机规划（含 CVaR）、滚动模型预测控制的 Python 求解程序，并辅助排查语法与运行错误；
+    \item \textbf{数值结果比对}：辅助核对求解输出、结果 Excel 与论文表格中的全年费用等数值一致性；
+    \item \textbf{文档排版}：辅助 LaTeX 论文的公式、表格、图表与附录代码排版，以及本说明文档的生成。
+\end{itemize}
+
+\section{主要提示方式与使用过程说明}
+\begin{itemize}
+    \item 以对话方式向 AI 工具描述算法目标、数学模型（能量守恒、储能递推、CVaR 线性化等）与求解要求，由工具生成或修正相应 Python 代码片段；
+    \item 仅将 AI 作为代码实现与排版的辅助手段，未要求其独立完成建模决策；
+    \item 对工具生成的代码片段，均在本地逐段运行验证，并与理论结果（如全年购电费）人工比对后采纳。
+\end{itemize}
+
+\section{对 AI 输出的采纳、人工修改和核验的主要情况}
+\begin{itemize}
+    \item \textbf{核心建模与分析由参赛队主导}：模型假设、目标函数与约束方程的建立、求解策略与结果分析均由参赛队完成；
+    \item \textbf{中文注释与代码核对}：AI 辅助书写的代码均经人工审查，函数逻辑、参数（储能容量、电价倍率等）与注释均由参赛队人工核对、修改与确认；
+    \item \textbf{三重校验}：对全年逐日结果执行功率平衡、储能约束与口径闭合三项硬性校验（见论文"模型检验"一节），确认结果可信；
+    \item \textbf{语言润色}：论文中文表述润色由 AI 辅助，其内容已由参赛队逐句审校，未改变建模内涵与数值结论。
+\end{itemize}
+
+\end{document}
