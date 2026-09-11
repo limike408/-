@@ -74,7 +74,14 @@ train_log/
 raw_big_data/
 output_result/
 
-# ==================== IDE 本地配置（不共享） ====================
+# ==================== 本地环境与缓存（新增：2026 国赛工作区） ====================
+python_libs/
+_mplcache/
+tmp/
+wheels/
+profiles/
+_vscode/
+*.whl
 .vscode/
 .idea/
 *.iml

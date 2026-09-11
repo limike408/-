@@ -128,3 +128,20 @@ def write_result3(path, dates_out, P, A, Q, c, f, E0, Eend, tpl_name='result3.xl
     _fill_chongfang(wb['充放电量'], dates_out, c, f, E0, Eend)
     wb._template = None
     return _save(wb, path)
+
+
+def strip_personal_meta(path):
+    """【新增】清除结果文件的文档属性中的个人元数据（creator/lastModifiedBy），
+    避免提交文件泄露个人信息（模板作者字段曾为个人名）。不动其他内容。"""
+    wb = openpyxl.load_workbook(path)
+    wb.properties.creator = ''
+    wb.properties.lastModifiedBy = ''
+    try:
+        wb.save(path)
+    except PermissionError:
+        alt = os.path.join(os.path.dirname(path),
+                           os.path.splitext(os.path.basename(path))[0] + '_new.xlsx')
+        wb.save(alt)
+        print('[警告] 元数据清除时目标被占用，已写副本:', alt)
+        return alt
+    return path

@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-"""C题 微网 —— 共享配置。所有路径/代数、储能参数、结果模板均落盘 E 盘，不占 C 盘。"""
+"""C题 微网 —— 共享配置。所有路径/代数、储能参数、结果模板统一放工作区仓库内。"""
 import os
 
-# ---- 路径（全在 E 盘 C题 目录下）----
-C_BASE  = r'E:\desktop\2026建模\C题'
-DATA_DIR = os.path.join(C_BASE, '附件')
-TPL_DIR  = os.path.join(DATA_DIR, '附件5')
+# ---- 路径（相对仓库根自动定位，任何机器 clone 后直接可跑）----
+C_BASE  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(C_BASE, 'data')
+TPL_DIR  = os.path.join(DATA_DIR, '附件5模板')
 CODE_DIR = os.path.join(C_BASE, 'code')
-RES_DIR  = os.path.join(C_BASE, 'results')
-FIG_DIR  = os.path.join(C_BASE, 'figures')
+RES_DIR  = os.path.join(C_BASE, 'report')
+FIG_DIR  = os.path.join(C_BASE, 'report', 'figures')
 for _d in (RES_DIR, FIG_DIR):
     os.makedirs(_d, exist_ok=True)
 
-# matplotlib 缓存等中间数据也放 E 盘
+# matplotlib 缓存等中间数据也放仓库内，不污染系统目录
 os.environ['MPLCONFIGDIR'] = os.path.join(C_BASE, '_mplcache')
 os.makedirs(os.environ['MPLCONFIGDIR'], exist_ok=True)
 
