@@ -248,6 +248,126 @@ def solve_adjust(price, G, D, E_start, P_plan, t0):
                 u=x[iU], w=x[iW], obj=res.fun)
 
 
+def solve_adjust_scen(price, scenG, D, E_start, P_plan, t0, lam=0.0, beta=0.90,
+                      emult=C.EMERG_MULT):
+    """滚动再计划（情景鲁棒版）：一阶段购电 A 共用，每光伏情景独立电池调度。
+
+    目标 = 期望电网费(违约退款+超额惩罚) + lam·CVaR_beta(情景总成本) + 期望紧急费。
+    允许每情景紧急购电 Q_s（代价 emult·price），保证任意光伏情景下可行——
+    这正是"随机 MPC"的鲁棒性体现。Q3 官方取 lam=0（纯期望）。
+    返回 dict(A,c,f,Q,R,E,u,w,obj)；各量按情景合并为 (S,nh)（A/u/w 广播为 (S,nh)）。
+    """
+    T = C.T_IN_DAY
+    scenG = np.asarray(scenG, float)
+    S = scenG.shape[0]
+    nh = T - t0
+    if nh <= 0:
+        z = np.zeros(0)
+        return dict(A=z, c=z, f=z, Q=z, R=z, E=z, u=z, w=z, obj=0.0)
+    pt = np.arange(t0, T)
+    pi = 1.0 / S
+    # 一阶段：A, U, W；每情景：C,F,Q,R,E
+    baseA, baseU, baseW = 0, nh, 2 * nh
+    scen_base = 3 * nh + np.arange(S) * (5 * nh)
+    nvar = 3 * nh + S * 5 * nh
+    iA = baseA + np.arange(nh)
+    iU = baseU + np.arange(nh)
+    iW = baseW + np.arange(nh)
+
+    c = np.zeros(nvar)
+    c[iU] = -C.DEFAULT_MULT * price[pt]
+    c[iW] = C.EXCESS_MULT * price[pt]
+    for s in range(S):
+        sb = scen_base[s]
+        c[sb + 2 * nh + np.arange(nh)] = pi * emult * price[pt]   # Q_s
+    alpha_idx = z_idx = None
+    if lam > 0:
+        alpha_idx = nvar; z_idx = nvar + 1 + np.arange(S)
+        nvar_full = nvar + 1 + S
+        c = np.concatenate([c, np.zeros(S + 1)])
+        c[alpha_idx] = lam; c[z_idx] = lam / ((1 - beta) * S)
+    else:
+        nvar_full = nvar
+
+    eq_r, eq_c, eq_v, beq = [], [], [], []
+    for s in range(S):
+        sb = scen_base[s]
+        iC = sb + np.arange(nh); iF = sb + nh + np.arange(nh)
+        iQ = sb + 2 * nh + np.arange(nh); iR = sb + 3 * nh + np.arange(nh)
+        iE = sb + 4 * nh + np.arange(nh)
+        for k in range(nh):
+            rr = len(beq)
+            eq_r.append(rr); eq_c.append(iA[k]); eq_v.append(1.0)
+            eq_r.append(rr); eq_c.append(iC[k]); eq_v.append(-1.0)
+            eq_r.append(rr); eq_c.append(iF[k]); eq_v.append(C.ETA)
+            eq_r.append(rr); eq_c.append(iQ[k]); eq_v.append(1.0)
+            eq_r.append(rr); eq_c.append(iR[k]); eq_v.append(-1.0)
+            beq.append(D[pt[k]] - scenG[s, pt[k]])
+        for k in range(nh):
+            rr = len(beq)
+            eq_r.append(rr); eq_c.append(iE[k]); eq_v.append(1.0)
+            eq_r.append(rr); eq_c.append(iC[k]); eq_v.append(-C.ETA)
+            eq_r.append(rr); eq_c.append(iF[k]); eq_v.append(1.0)
+            if k > 0:
+                eq_r.append(rr); eq_c.append(iE[k - 1]); eq_v.append(-1.0)
+                beq.append(0.0)
+            else:
+                beq.append(E_start)
+    A_eq = sp.csr_matrix((eq_v, (eq_r, eq_c)), shape=(len(beq), nvar_full))
+
+    Aub_r, Aub_c, Aub_v, bub = [], [], [], []
+    for k in range(nh):
+        r = len(bub)
+        Aub_r.append(r); Aub_c.append(iA[k]); Aub_v.append(-1.0)
+        Aub_r.append(r); Aub_c.append(iU[k]); Aub_v.append(-1.0)
+        bub.append(-P_plan[pt[k]])
+        r = len(bub)
+        Aub_r.append(r); Aub_c.append(iA[k]); Aub_v.append(1.0)
+        Aub_r.append(r); Aub_c.append(iW[k]); Aub_v.append(-1.0)
+        bub.append(P_plan[pt[k]])
+    if lam > 0:
+        for s in range(S):
+            r = len(bub)
+            sb = scen_base[s]
+            iQ = sb + 2 * nh + np.arange(nh)
+            for k in range(nh):
+                Aub_r.append(r); Aub_c.append(iQ[k]); Aub_v.append(emult * price[pt[k]])
+            Aub_r.append(r); Aub_c.append(alpha_idx); Aub_v.append(-1.0)
+            Aub_r.append(r); Aub_c.append(z_idx[s]); Aub_v.append(-1.0)
+            bub.append(0.0)
+    A_ub = sp.csr_matrix((Aub_v, (Aub_r, Aub_c)), shape=(len(bub), nvar_full))
+
+    lb = np.zeros(nvar_full); ub = np.full(nvar_full, np.inf)
+    for s in range(S):
+        sb = scen_base[s]
+        ub[sb + np.arange(nh)] = C.E_CMAX               # C_s
+        ub[sb + nh + np.arange(nh)] = C.E_FMAX          # F_s
+        lb[sb + 4 * nh + np.arange(nh)] = C.SOC_MIN
+        ub[sb + 4 * nh + np.arange(nh)] = C.SOC_HIGH_BOUND
+    ub[iU] = np.maximum(P_plan[pt], 0.0)
+    if lam > 0:
+        lb[alpha_idx] = -np.inf; lb[z_idx] = 0
+    bounds = list(zip(lb, ub))
+
+    res = linprog(c, A_eq=A_eq, A_ub=A_ub, b_eq=np.array(beq), b_ub=np.array(bub),
+                  bounds=bounds, method='highs')
+    if not res.success:
+        raise RuntimeError('情景鲁棒滚动再计划LP失败: ' + res.message)
+    x = res.x
+    A = x[iA]; u = x[iU]; w = x[iW]
+    Cm = np.zeros((S, nh)); F = np.zeros((S, nh)); Q = np.zeros((S, nh))
+    R = np.zeros((S, nh)); E = np.zeros((S, nh))
+    for s in range(S):
+        sb = scen_base[s]
+        Cm[s] = x[sb + np.arange(nh)]
+        F[s] = x[sb + nh + np.arange(nh)]
+        Q[s] = x[sb + 2 * nh + np.arange(nh)]
+        R[s] = x[sb + 3 * nh + np.arange(nh)]
+        E[s] = x[sb + 4 * nh + np.arange(nh)]
+    return dict(A=A, c=Cm, f=F, Q=Q, R=R, E=E,
+                u=np.tile(u, (S, 1)), w=np.tile(w, (S, 1)), obj=res.fun)
+
+
 def _var_rows_scen(base_s, T):
     out = {}
     for s, base in enumerate(base_s):
