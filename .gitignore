@@ -96,3 +96,7 @@ local_config.py
 *.key
 *.secret
 private/
+
+# ==================== IDE 本地缓存 ====================
+.trae/
+.trae-cn/
