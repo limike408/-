@@ -61,6 +61,8 @@ Rplots.pdf
 *.toc
 *.synctex.gz
 *.synctex(busy)
+# 版本备份文件（不入库）：如 main.tex.bak_11.0、main_tex_11.0bak.tex
+*bak*
 
 # ==================== 大型模型/日志（防止仓库爆炸） ====================
 *.pth
