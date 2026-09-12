@@ -181,73 +181,6 @@ def solve_two_stage(price, scenD, scenG, E_start, lam=0.0, beta=0.90):
     return dict(P=P, Q=Q, c=Cc, f=F, E=E, obj=res.fun)
 
 
-def solve_adjust(price, G, D, E_start, P_plan, t0):
-    """滚动再计划：在 [t0,144) 决定最终购电 A，对计划 P_plan 付违约/超出惩罚。
-
-    u=(P-A)^+ 违约量 → 项 -0.5p u；w=(A-P)^+ 超出量 → 项 +1.5p w。
-    再计划阶段不允许紧急购电(Q=0)。返回 dict(A,c,f,Q=0,R,E,u,w,obj)，长度 (144-t0)。
-    """
-    T = C.T_IN_DAY; nh = T - t0
-    if nh <= 0:
-        z = np.zeros(0)
-        return dict(A=z, c=z, f=z, Q=z, R=z, E=z, u=z, w=z, obj=0.0)
-    base = np.arange(nh) * 8
-    iA, iC, iF, iQ, iR, iE, iU, iW = (base + k for k in range(8))
-    pt = np.arange(t0, T)
-    nvar = 8 * nh
-    c = np.zeros(nvar)
-    c[iU] = -C.DEFAULT_MULT * price[pt]
-    c[iW] = C.EXCESS_MULT * price[pt]
-
-    eq_r, eq_c, eq_v, beq = [], [], [], []
-    for s in range(nh):
-        eq_r.append(s); eq_c.append(iA[s]); eq_v.append(1.0)
-        eq_r.append(s); eq_c.append(iC[s]); eq_v.append(-1.0)
-        eq_r.append(s); eq_c.append(iF[s]); eq_v.append(C.ETA)
-        eq_r.append(s); eq_c.append(iQ[s]); eq_v.append(1.0)
-        eq_r.append(s); eq_c.append(iR[s]); eq_v.append(-1.0)
-        beq.append(D[pt[s]] - G[pt[s]])
-    for s in range(nh):
-        rr = nh + s
-        eq_r.append(rr); eq_c.append(iE[s]); eq_v.append(1.0)
-        eq_r.append(rr); eq_c.append(iC[s]); eq_v.append(-C.ETA)
-        eq_r.append(rr); eq_c.append(iF[s]); eq_v.append(1.0)
-        if s > 0:
-            eq_r.append(rr); eq_c.append(iE[s-1]); eq_v.append(-1.0)
-            beq.append(0.0)
-        else:
-            beq.append(E_start)
-    A_eq = sp.csr_matrix((eq_v, (eq_r, eq_c)), shape=(len(beq), nvar))
-
-    Aub_r, Aub_c, Aub_v, bub = [], [], [], []
-    for s in range(nh):
-        r = len(bub)
-        Aub_r.append(r); Aub_c.append(iA[s]); Aub_v.append(-1.0)
-        Aub_r.append(r); Aub_c.append(iU[s]); Aub_v.append(-1.0)
-        bub.append(-P_plan[pt[s]])
-        r = len(bub)
-        Aub_r.append(r); Aub_c.append(iA[s]); Aub_v.append(1.0)
-        Aub_r.append(r); Aub_c.append(iW[s]); Aub_v.append(-1.0)
-        bub.append(P_plan[pt[s]])
-    A_ub = sp.csr_matrix((Aub_v, (Aub_r, Aub_c)), shape=(len(bub), nvar))
-
-    lb = np.zeros(nvar); ub = np.full(nvar, np.inf)
-    ub[iC] = C.E_CMAX; ub[iF] = C.E_FMAX
-    lb[iE] = C.SOC_MIN; ub[iE] = C.SOC_HIGH_BOUND
-    ub[iQ] = 0.0
-    lb[iU] = 0; ub[iU] = np.maximum(P_plan[pt], 0.0)
-    lb[iW] = 0
-    bounds = list(zip(lb, ub))
-
-    res = linprog(c, A_eq=A_eq, A_ub=A_ub, b_eq=np.array(beq), b_ub=np.array(bub),
-                  bounds=bounds, method='highs')
-    if not res.success:
-        raise RuntimeError('滚动再计划LP失败: ' + res.message)
-    x = res.x
-    return dict(A=x[iA], c=x[iC], f=x[iF], Q=x[iQ], R=x[iR], E=x[iE],
-                u=x[iU], w=x[iW], obj=res.fun)
-
-
 def _var_rows_scen(base_s, T):
     out = {}
     for s, base in enumerate(base_s):
@@ -255,3 +188,97 @@ def _var_rows_scen(base_s, T):
         out[s] = {'C': ar[0::5], 'F': ar[1::5], 'Q': ar[2::5],
                   'R': ar[3::5], 'E': ar[4::5]}
     return out
+
+
+def solve_adjust_scen(price, scenD, scenG, E_start, P_plan, t0):
+    """滚动调整的情景鲁棒版（Q3 v2 用）：在 [t0,T) 对 S 个情景做期望最小化决定调整购电 A。
+
+    与旧 solve_adjust 的区别（口径修正）：
+    1) 目标按真实结算口径计费 A：Σ_t [p·A + 0.5p·u + 1.5p·w]，其中违约/超额量由等式
+       A + u - w = P 精确绑定（u=(P-A)^+，w=(A-P)^+，最优时 u·w=0）。
+       旧版只有 A+u>=P 且 u<=P，目标又把 u 推向 P，造成"调整购电 A 免费"的退化口径。
+    2) 两阶段式：A 对情景共用（承诺购电），电池充放 c/f、弃光 R、储电 E 与**情景内紧急购电
+       Q（5 倍价期望）**按情景分别决策——A 不必覆盖最坏情景包络，缺电由情景内 Q 计价，
+       使调整决策在"多买电(1倍) vs 紧急补购(5倍)"间做期望权衡（"随机 MPC"名副其实）。
+    3) 日终结算的紧急购电另由 solve_day_fixedP 按当日实际值给出（与 Q2 结算口径一致）。
+
+    scenD/scenG: (S, nh) 情景净需求侧数据，nh = 144 - t0。
+    返回 dict(A,u,w,c,f,Q,R,E,obj)，A/u/w 长度 nh；c/f/Q/R/E 形状 (S,nh)。
+    """
+    T = C.T_IN_DAY
+    nh = T - t0
+    if nh <= 0:
+        z = np.zeros((len(scenD), 0))
+        return dict(A=np.zeros(0), u=np.zeros(0), w=np.zeros(0),
+                    c=z, f=z, Q=z, R=z, E=z, obj=0.0)
+    S = len(scenD)
+    pt = np.arange(t0, T)
+    pr = price[pt]
+    Pseg = np.asarray(P_plan[pt], float)
+    # 变量布局：A(nh), u(nh), w(nh), 每情景 [c,f,Q,R,E](5*nh)
+    iA = np.arange(nh)
+    iU = np.arange(nh, 2 * nh)
+    iW = np.arange(2 * nh, 3 * nh)
+    off = 3 * nh
+    nvar = off + S * 5 * nh
+    pi = 1.0 / S
+    c = np.zeros(nvar)
+    c[iA] = 0.0
+    c[iU] = -C.DEFAULT_MULT * pr
+    c[iW] = C.EXCESS_MULT * pr
+    iv = {}
+    for s in range(S):
+        b = off + s * 5 * nh
+        iv[s] = dict(C=b + np.arange(nh), F=b + nh + np.arange(nh),
+                     Q=b + 2 * nh + np.arange(nh), R=b + 3 * nh + np.arange(nh),
+                     E=b + 4 * nh + np.arange(nh))
+        c[iv[s]['Q']] = pi * C.EMERG_MULT * pr
+
+    eq_r, eq_c, eq_v, beq = [], [], [], []
+    row = 0
+    # 违约/超额绑定：A + u - w = P（每时段，与情景无关）
+    for t in range(nh):
+        eq_r.append(row); eq_c.append(iA[t]); eq_v.append(1.0)
+        eq_r.append(row); eq_c.append(iU[t]); eq_v.append(1.0)
+        eq_r.append(row); eq_c.append(iW[t]); eq_v.append(-1.0)
+        beq.append(Pseg[t]); row += 1
+    # 每情景：能量平衡 A + G + ηf + Q = D + c + R 与储能递推
+    for s in range(S):
+        v = iv[s]
+        for t in range(nh):
+            eq_r.append(row); eq_c.append(iA[t]); eq_v.append(1.0)
+            eq_r.append(row); eq_c.append(v['C'][t]); eq_v.append(-1.0)
+            eq_r.append(row); eq_c.append(v['F'][t]); eq_v.append(C.ETA)
+            eq_r.append(row); eq_c.append(v['Q'][t]); eq_v.append(1.0)
+            eq_r.append(row); eq_c.append(v['R'][t]); eq_v.append(-1.0)
+            beq.append(scenD[s, t] - scenG[s, t]); row += 1
+        for t in range(nh):
+            eq_r.append(row); eq_c.append(v['E'][t]); eq_v.append(1.0)
+            eq_r.append(row); eq_c.append(v['C'][t]); eq_v.append(-C.ETA)
+            eq_r.append(row); eq_c.append(v['F'][t]); eq_v.append(1.0)
+            if t > 0:
+                eq_r.append(row); eq_c.append(v['E'][t - 1]); eq_v.append(-1.0)
+                beq.append(0.0)
+            else:
+                beq.append(E_start)
+            row += 1
+    A_eq = sp.csr_matrix((eq_v, (eq_r, eq_c)), shape=(row, nvar))
+
+    lb = np.zeros(nvar); ub = np.full(nvar, np.inf)
+    for s in range(S):
+        v = iv[s]
+        ub[v['C']] = C.E_CMAX; ub[v['F']] = C.E_FMAX
+        lb[v['E']] = C.SOC_MIN; ub[v['E']] = C.SOC_HIGH_BOUND
+    bounds = list(zip(lb, ub))
+
+    res = linprog(c, A_eq=A_eq, b_eq=np.array(beq), bounds=bounds, method='highs')
+    if not res.success:
+        raise RuntimeError('滚动调整情景LP失败: ' + res.message)
+    x = res.x
+    Cc = np.zeros((S, nh)); F = np.zeros((S, nh)); Qq = np.zeros((S, nh))
+    Rr = np.zeros((S, nh)); E = np.zeros((S, nh))
+    for s in range(S):
+        v = iv[s]
+        Cc[s] = x[v['C']]; F[s] = x[v['F']]; Qq[s] = x[v['Q']]
+        Rr[s] = x[v['R']]; E[s] = x[v['E']]
+    return dict(A=x[iA], u=x[iU], w=x[iW], c=Cc, f=F, Q=Qq, R=Rr, E=E, obj=res.fun)

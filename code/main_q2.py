@@ -7,7 +7,8 @@
   2) 情景生成：整日残差 bootstrap（scenarios.residual_scenarios），负荷与光伏同一天成对，
      S=30 个情景，抽样种子 = 2026 + 日序（与日期绑定、确定性、重跑逐位一致）；
      2025-01-01 无历史，按拍板规格用附件1 典型日剖面做冷启动情景基准；
-  3) 计划 P：lp.solve_two_stage(lam=0，纯期望最小化)；
+  3) 计划 P：lp.solve_two_stage(lam=LAM_OFFICIAL，CVaR 风险权衡口径：接受总费用略升、
+     换取紧急购电显著下降；λ* 由 q2_lambda_sweep.py 全年权衡曲线数据驱动选定)；
   4) 结算：固定 P，用当日实际负荷/光伏调 lp.solve_day_fixedP（紧急价 5p）得当日实际
      紧急购电 Q 与充放电 c/f、储能 E；E_end 结转次日（跨日连续，1200~10800 kWh）。
   全年链自 2025-01-01（E=6000）逐日滚动，仅 1 月作储能状态预热，输出 2.1-12.31。
@@ -26,6 +27,11 @@ import scenarios
 K_CANDIDATES = [7, 15, 30]      # K 候选集（数据驱动选优）
 SEED_BASE = 2026                # 抽样种子基数：2026 + 日序
 LEGACY_FEE_RECORD = 12259844.62 # 旧完美信息口径计划费（历史运行记录值）
+LAM_OFFICIAL = 0.5              # 官方风险权衡权重 λ*：由 q2_lambda_sweep.py 全年权衡曲线数据驱动选定
+                                # （λ=0.5 拐点：紧急购电费较 λ=0 下降 55.5%，合计 16,204,829.00 微降 0.02%；
+                                #   λ≥1.5 后计划费饱和不再改善。用户拍板：Q2 采用风险权衡——
+                                #   接受计划费略升、换取紧急购电显著下降；Q3/Q4 不引入 CVaR，
+                                #   理由见 main_q3.py 头部注释，论文正文点明）
 
 
 def _seed_for_day(d):
@@ -145,9 +151,9 @@ def run(outfile='result2.xlsx'):
     print(cv.to_string(index=False))
     print(f'所选: K_L = {KL}, K_P = {KP}')
 
-    # ---- 2) 预报式两阶段随机规划全年链（1 月预热，不输出）----
-    print(f'开始全年滚动链：365 天 × S={C.S_NUM} 情景两阶段 LP（lam=0）……')
-    rec = _run_forecast_chain(price, dates, load, pv, KL, KP, S=C.S_NUM, lam=0.0)
+    # ---- 2) 预报式两阶段随机规划全年链（1 月预热，不输出；λ=λ* 风险权衡口径）----
+    print(f'开始全年滚动链：365 天 × S={C.S_NUM} 情景两阶段 LP（lam={LAM_OFFICIAL}）……')
+    rec = _run_forecast_chain(price, dates, load, pv, KL, KP, S=C.S_NUM, lam=LAM_OFFICIAL)
 
     # ---- 3) 汇总与写 result2.xlsx ----
     dates_out = [d for d in dates if d >= pd.Timestamp('2025-02-01')]
@@ -261,7 +267,7 @@ def method_analysis(price, dates, load, pv, rec, KL, KP):
         E_start = rec[d]['E_start']
         fc = scenarios.residual_scenarios(load[:i], pv[:i], (KL, KP), S=C.S_NUM,
                                           seed=_seed_for_day(d))
-        for lam in [0.0, 0.5, 1.0, 2.0, 5.0]:
+        for lam in sorted(set([0.0, 0.5, 1.0, 2.0, 5.0, LAM_OFFICIAL])):
             two = lp.solve_two_stage(price, fc['scen_ld'], fc['scen_pv'], E_start,
                                      lam=lam, beta=C.BETA)
             settle = lp.solve_day_fixedP(price, pv[i], load[i], E_start, two['P'])
@@ -270,14 +276,14 @@ def method_analysis(price, dates, load, pv, rec, KL, KP):
             rows.append(dict(day=dd, lam=lam, plan_fee=plan_fee, emerg_fee=emerg_fee,
                              total=plan_fee + emerg_fee, emerg_kwh=float(settle['Q'].sum())))
     df = pd.DataFrame(rows)
-    # 自检：λ=0 行应与官方链当日结算一致（同种子、同情景、同 E_start）
+    # 自检：λ=λ* 行应与官方链当日结算一致（同种子、同情景、同 E_start）
     for dd in C.SPEC_DAYS:
         d = pd.Timestamp(dd)
-        r0 = df[(df.day == dd) & (df.lam == 0.0)].iloc[0]
+        r0 = df[(df.day == dd) & (df.lam == LAM_OFFICIAL)].iloc[0]
         chain_plan = float(np.sum(price * rec[d]['P']))
         chain_emer = float(np.sum(C.EMERG_MULT * price * rec[d]['Q']))
-        assert abs(r0.plan_fee - chain_plan) < 1e-3, f'{dd} λ=0 计划费与官方链不一致'
-        assert abs(r0.emerg_fee - chain_emer) < 1e-3, f'{dd} λ=0 紧急费与官方链不一致'
+        assert abs(r0.plan_fee - chain_plan) < 1e-3, f'{dd} λ={LAM_OFFICIAL} 计划费与官方链不一致'
+        assert abs(r0.emerg_fee - chain_emer) < 1e-3, f'{dd} λ={LAM_OFFICIAL} 紧急费与官方链不一致'
     print('\n[Q2 λ敏感性 · 两阶段随机+CVaR（新情景生成器）]')
     print(df.to_string(index=False))
     df.to_csv(os.path.join(C.RES_DIR, 'q2_two_stage_comparison.csv'),

@@ -88,11 +88,20 @@ fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A3_price_violin.png'), dpi=15
 
 # ================= 图A4/A5: λ-β 敏感性（两阶段随机+CVaR, 2025-03-20） =================
 D0 = pd.Timestamp('2025-03-20'); i0 = int(np.where(dates == D0)[0][0])
-E0 = C.E_INIT
-for j in range(i0):
-    rp = lp.solve_day_plan(fp, pv[j], load[j], E0); E0 = rp['E'][-1]
-hist_lo = load[max(0, i0-9):i0]; hist_pv = pv[max(0, i0-9):i0]
-fc = scenarios.forecast_and_scenarios(hist_lo, hist_pv, S=C.S_NUM, seed=i0+1)
+# 与 Q2 官方链同源：E0 取 result2.xlsx 中 3-20 的 0:00 储电量（λ* 预热链实际值）；
+# 情景用整日成对残差 bootstrap（K_L=15/K_P=7，seed=2026+日序），替代旧逐槽独立抽样。
+import openpyxl
+_wb = openpyxl.load_workbook(os.path.join(C.RES_DIR, 'result2.xlsx'), read_only=True)
+_ws = _wb['充放电量']
+E0 = None
+for _row in _ws.iter_rows(min_row=2, values_only=True):
+    if isinstance(_row[0], str) and _row[0].startswith('2025-03-20') and _row[4] == '0:00':
+        E0 = float(_row[5]); break
+_wb.close()
+assert E0 is not None, 'result2.xlsx 中未找到 2025-03-20 的 0:00 储电量'
+import main_q2
+fc = scenarios.residual_scenarios(load[:i0], pv[:i0], (15, 7), S=C.S_NUM,
+                                  seed=main_q2._seed_for_day(D0))
 
 LAMS = [0, 0.2, 0.5, 1, 2, 5]
 BETS = [0.80, 0.85, 0.90, 0.95, 0.99]
@@ -140,7 +149,7 @@ fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A5_pareto.png'), dpi=150); pl
 fig, ax = plt.subplots(figsize=(7.4, 6.6), subplot_kw=dict(polar=True))
 dims = ['经济性', '供电可靠性', '鲁棒性', '计算复杂度', '信息利用度']
 # 半定量打分 0-10：确定性LP / 两阶段随机 / 滚动MPC / 波动电价重算
-vals = dict(LP=[8, 4, 2, 9, 3], 随机=[6, 9, 8, 4, 7], MPC=[7, 8, 9, 3, 8], 波动=[5, 8, 8, 3, 9])
+vals = dict(LP=[8, 4, 2, 9, 3], 随机=[6, 9, 8, 4, 7], MPC=[7, 8, 9, 3, 9], 波动=[5, 8, 8, 3, 9])
 N = len(dims); ang = np.linspace(0, 2*np.pi, N, endpoint=False).tolist(); ang += ang[:1]
 for k, (name, v) in enumerate(vals.items()):
     vv = v + v[:1]

@@ -142,10 +142,14 @@
 
 本次提交（分支 `limike408/code`）同步了 **C题（微网日前两阶段决策与实时调整）** 的完整成果，目录归类如下：
 
-- `/code`：全部 Python 求解脚本（`config.py` 配置、`data.py` 数据加载、`lp.py` LP/MILP 求解器、`main_q1~q4.py` 四问入口、`results.py` 结果回填、图表与季节分析脚本）
+- `/code`：全部 Python 求解脚本（`config.py` 配置、`data.py` 数据加载、`lp.py` LP 求解器、`main_q1~q4.py` 四问入口、`results.py` 结果回填、`q2_lambda_sweep.py` λ 权衡扫描、`export_plot_data.py` 数字提取、季节分析脚本）
 - `/data`：附件1-4 原始数据 + `附件5模板` 结果回填模板
 - `/paper`：论文 `main.tex` + 已编译 `main.pdf`、`cumcmthesis.cls` 类、中文字体、题目 `C题_题目.pdf`、`结果说明.md`
 - `/report`：五个结果 Excel（result1/2/3/4-2/4-3.xlsx）、对比 CSV、`figures`（基础图）与 `figures_adv`（进阶图）
-- `/docs`：各版优化建议与流程图（1.0~6.0 版）
+- `/scripts_r`：R(ggplot2) 绘图脚本（A9–A12 与 λ 权衡曲线）
+- `/docs`：各版优化建议与流程图
 
-结果口径：Q2 全年计划购电费 12259844.6 元；Q3 全年总费用 15263487.8 元；Q4 波动电价下 Q4-2 上浮 4.8%、Q4-3 上浮 5.1%。
+结果口径（v3，详见 `paper/结果说明.md`）：Q2 官方采用预报式两阶段随机规划 + CVaR 风险权衡
+（λ* 由全年权衡曲线数据驱动选定，紧急购电费较 λ=0 下降约 55%、合计持平）；Q3 为因果滚动随机
+MPC（负荷预报化 + 情景鲁棒调整 + 实际储电轨迹 + 去后见之明，λ=0）；Q4 用波动电价对 Q2/Q3
+统一内核做价格冲击复算。具体数字以 `code/export_plot_data.py` 输出与结果附件为准。
