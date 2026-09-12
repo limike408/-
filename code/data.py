@@ -11,14 +11,21 @@ def _read_year_matrix(path, sheet):
     df = pd.read_excel(path, sheet_name=sheet)
     dtcol = df.columns[0]
     df = df.set_index(dtcol)
-    # 时间列排序
+    # 时间列排序（'0:00+1'=24:00 显式归位到末尾，防止被当 0 点排到最前导致整表环移）
     lab = [str(c) for c in df.columns]
     def mm(x):
-        s = str(x).replace('+1','')
+        s = str(x)
+        if '+1' in s:
+            return 1440
+        s = s.replace('+1', '')
         p = s.split(':')
-        return int(p[0])*60 + int(p[1]) if len(p)>=2 else int(p[0])*60
+        return int(p[0]) * 60 + int(p[1]) if len(p) >= 2 else int(p[0]) * 60
     order = np.argsort([mm(x) for x in lab])
     df = df.iloc[:, order]
+    # 列序指纹断言（防静默错位复发）
+    lab_sorted = [str(c) for c in df.columns]
+    assert mm(lab_sorted[0]) == 10, f'{path}[{sheet}] 首列应为 00:10 时段，实际 {lab_sorted[0]}'
+    assert mm(lab_sorted[-1]) == 1440, f'{path}[{sheet}] 末列应为 0:00+1(24:00)，实际 {lab_sorted[-1]}'
     dates = pd.to_datetime(df.index)
     mat = df.to_numpy(dtype=float)
     if mat.shape[1] != C.T_IN_DAY:
@@ -30,10 +37,18 @@ def load_attach1():
     """附件1：单日 144 行。返回 dict(price,load,pv) 均为 kWh/时段。"""
     df = pd.read_excel(os.path.join(C.DATA_DIR, '附件1.xlsx'), sheet_name='Sheet1')
     def mm(x):
-        s = str(x).replace('+1',''); p = s.split(':')
-        return int(p[0])*60 + int(p[1]) if len(p)>=2 else int(p[0])*60
+        s = str(x)
+        if '+1' in s:
+            return 1440
+        s = s.replace('+1', '')
+        p = s.split(':')
+        return int(p[0]) * 60 + int(p[1]) if len(p) >= 2 else int(p[0]) * 60
     order = np.argsort([mm(x) for x in df['时间']])
     df = df.iloc[order]
+    # 行序指纹断言（防静默错位复发）
+    lab = [str(x) for x in df['时间']]
+    assert mm(lab[0]) == 10, f'附件1 首行应为 00:10 时段，实际 {lab[0]}'
+    assert mm(lab[-1]) == 1440, f'附件1 末行应为 0:00+1(24:00)，实际 {lab[-1]}'
     price = df['电价'].to_numpy(float)
     load = df['小区负载'].to_numpy(float) * C.DT       # kW -> kWh
     pv = df['光伏发电预测功率'].to_numpy(float) * C.DT

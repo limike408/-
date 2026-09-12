@@ -83,8 +83,10 @@ def main():
             print(f'  [Q3波动] {i+1}/{len(dates)} 日（{d.date()}）', flush=True)
 
     rows = []
+    # 季节统计口径与全年费用一致：只用 2.1-12.31（334 天，1 月仅作储能预热，不参与季节均值）
+    do_all = [d for d in dates if d >= pd.Timestamp('2025-02-01')]
     for s in SORDER:
-        idx = [d for d in dates if season(d) == s]
+        idx = [d for d in do_all if season(d) == s]
         a = np.array([cost_fix2[d] for d in idx]); b = np.array([cost_var2[d] for d in idx])
         c = np.array([cost_fix3[d] for d in idx]); e = np.array([cost_var3[d] for d in idx])
         rows.append(dict(seas=s, n=len(idx),

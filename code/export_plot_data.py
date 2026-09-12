@@ -105,9 +105,10 @@ def main():
     g43, e43 = _q3_fees(os.path.join(C.RES_DIR, 'result4-3.xlsx'), price_var)
 
     rows = [
-        dict(label='问题二\n(预报式两阶段随机)', grid_fee=round(g2, 2), emerg_fee=round(e2, 2)),
-        dict(label='问题三\n(滚动随机MPC)', grid_fee=round(g3, 2), emerg_fee=round(e3, 2)),
-        dict(label='问题四·问题三\n(波动电价)', grid_fee=round(g43, 2), emerg_fee=round(e43, 2)),
+        dict(label='问题二\n(固定电价·随机)', grid_fee=round(g2, 2), emerg_fee=round(e2, 2)),
+        dict(label='问题三\n(固定电价·滚动)', grid_fee=round(g3, 2), emerg_fee=round(e3, 2)),
+        dict(label='问题四(二)\n(波动电价·随机)', grid_fee=round(g42, 2), emerg_fee=round(e42, 2)),
+        dict(label='问题四(三)\n(波动电价·滚动)', grid_fee=round(g43, 2), emerg_fee=round(e43, 2)),
     ]
     df = pd.DataFrame(rows)
     df.to_csv(os.path.join(C.RES_DIR, 'plot_annual.csv'), index=False, encoding='utf-8-sig')
