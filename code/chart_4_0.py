@@ -31,11 +31,12 @@ for i, lam in enumerate([0.0, 2.0]):
                     bottom=sub['plan_fee'].values / 1e4, label=f'λ={int(lam)} 紧急购电费')
     for b in list(bars_p) + list(bars_e):
         ax.text(b.get_x() + b.get_width() / 2, b.get_y() + b.get_height() + 0.1,
-                f'{b.get_height():.1f}', ha='center', fontsize=8)
-ax.set_xticks(x); ax.set_xticklabels([DAY_LABEL[k] for k in days])
-ax.set_xlabel('指定日期'); ax.set_ylabel('费用（万元）')
-ax.set_title('问题二方法层：风险权重 λ 下"计划费换可靠性"权衡（堆叠柱）', fontsize=12)
-ax.legend(fontsize=9); ax.grid(axis='y', ls='--', alpha=0.4)
+                f'{b.get_height():.1f}', ha='center', fontsize=10)
+ax.set_xticks(x); ax.set_xticklabels([DAY_LABEL[k] for k in days], fontsize=11)
+ax.set_xlabel('指定日期', fontsize=12); ax.set_ylabel('费用（万元）', fontsize=12)
+ax.set_title('问题二方法层：风险权重 λ 下"计划费换可靠性"权衡（堆叠柱）', fontsize=13)
+ax.legend(fontsize=10); ax.grid(axis='y', ls='--', alpha=0.4)
+ax.tick_params(labelsize=11)
 fig.tight_layout(); fig.savefig(os.path.join(FIGD, 'A9_q2_cvar_compare.png'), dpi=150); plt.close(fig)
 
 # ============ A10 问题四：季节日均费用 固定/波动 对比（问题三） ============
@@ -47,15 +48,16 @@ b1 = ax.bar(x - w / 2, dfs['q3_fix'], w, label='固定电价', color='#4C72B0')
 b2 = ax.bar(x + w / 2, dfs['q3_var'], w, label='波动电价', color='#DD8452')
 for b in list(b1) + list(b2):
     ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 0.03,
-            f'{b.get_height():.2f}', ha='center', fontsize=9)
+            f'{b.get_height():.2f}', ha='center', fontsize=10)
 for i, up in enumerate(dfs['up3']):
     ax.text(x[i] + w / 2, max(dfs['q3_fix'][i], dfs['q3_var'][i]) + 0.35,
             f'+{up:.1f}%' if up >= 0 else f'{up:.1f}%',
-            ha='center', fontsize=9, color='#C44E52', bbox=dict(fc='white', ec='#C44E52', lw=0.6, boxstyle='round,pad=0.15'))
-ax.set_xticks(x); ax.set_xticklabels(seasons)
-ax.set_xlabel('季节'); ax.set_ylabel('日均费用（万元/日）')
-ax.set_title('问题四：波动电价下季节日均费用的季节性差异（问题三）', fontsize=12)
-ax.legend(fontsize=9); ax.grid(axis='y', ls='--', alpha=0.4)
+            ha='center', fontsize=10, color='#C44E52', bbox=dict(fc='white', ec='#C44E52', lw=0.6, boxstyle='round,pad=0.15'))
+ax.set_xticks(x); ax.set_xticklabels(seasons, fontsize=11)
+ax.set_xlabel('季节', fontsize=12); ax.set_ylabel('日均费用（万元/日）', fontsize=12)
+ax.set_title('问题四：波动电价下季节日均费用的季节性差异（问题三）', fontsize=13)
+ax.legend(fontsize=10); ax.grid(axis='y', ls='--', alpha=0.4)
+ax.tick_params(labelsize=11)
 fig.tight_layout(); fig.savefig(os.path.join(FIGD, 'A10_season_cost.png'), dpi=150); plt.close(fig)
 
 # ============ A11 问题三：仅0:00 vs 滚动 总费用对比（堆叠 电网/紧急） ============
@@ -70,11 +72,12 @@ for i, (k, lb, c1, c2) in enumerate([('only0', '仅 0:00', '#4C72B0', '#74A7D8')
     ax.bar(x + off, em, w, bottom=gr, label=f'{lb} 紧急购电费', color=c2)
     for j in range(len(days)):
         t = gr[j] + em[j]
-        ax.text(x[j] + off, t + 0.1, f'{t:.1f}', ha='center', fontsize=8)
-ax.set_xticks(x); ax.set_xticklabels([DAY_LABEL[k] for k in days])
-ax.set_xlabel('指定日期'); ax.set_ylabel('费用（万元）')
-ax.set_title('问题三：引入多时刻预报前后总费用对比（堆叠柱）', fontsize=12)
-ax.legend(fontsize=8, ncol=2); ax.grid(axis='y', ls='--', alpha=0.4)
+        ax.text(x[j] + off, t + 0.1, f'{t:.1f}', ha='center', fontsize=10)
+ax.set_xticks(x); ax.set_xticklabels([DAY_LABEL[k] for k in days], fontsize=11)
+ax.set_xlabel('指定日期', fontsize=12); ax.set_ylabel('费用（万元）', fontsize=12)
+ax.set_title('问题三：引入多时刻预报前后总费用对比（堆叠柱）', fontsize=13)
+ax.legend(fontsize=10, ncol=2); ax.grid(axis='y', ls='--', alpha=0.4)
+ax.tick_params(labelsize=11)
 fig.tight_layout(); fig.savefig(os.path.join(FIGD, 'A11_q3_roll_compare.png'), dpi=150); plt.close(fig)
 
 # ============ A12 全年费用结构：问题二/三/四-3（电网费 vs 紧急购电费 堆叠） ============
@@ -88,14 +91,15 @@ b2 = ax.bar(x, np.array(emerg) / 1e6, w, bottom=np.array(grid) / 1e6,
             label='紧急购电费', color='#C44E52')
 for j in range(3):
     tot = (grid[j] + emerg[j]) / 1e6
-    ax.text(x[j], tot + 5, f'{tot:.0f} 万元', ha='center', fontsize=10,
+    ax.text(x[j], tot + 5, f'{tot:.0f} 万元', ha='center', fontsize=11,
             bbox=dict(fc='white', ec='#333', lw=0.5, boxstyle='round,pad=0.2'))
     ax.text(x[j], (grid[j] + emerg[j] / 2) / 1e6, f'{emerg[j]/1e4:.0f} 万元',
-            ha='center', fontsize=8, color='white' if emerg[j] > 1e5 else '#333')
-ax.set_xticks(x); ax.set_xticklabels(labels)
-ax.set_ylabel('费用（百万元）'); ax.set_ylim(0, 20)
-ax.set_title('全年费用结构：随机/滚动模型逐步逼近真实成本的对比', fontsize=12)
-ax.legend(fontsize=9); ax.grid(axis='y', ls='--', alpha=0.4)
+            ha='center', fontsize=10, color='white' if emerg[j] > 1e5 else '#333')
+ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=11)
+ax.set_ylabel('费用（百万元）', fontsize=12); ax.set_ylim(0, 20)
+ax.set_title('全年费用结构：随机/滚动模型逐步逼近真实成本的对比', fontsize=13)
+ax.legend(fontsize=10); ax.grid(axis='y', ls='--', alpha=0.4)
+ax.tick_params(labelsize=11)
 fig.tight_layout(); fig.savefig(os.path.join(FIGD, 'A12_annual_cost.png'), dpi=150); plt.close(fig)
 
 print('已生成：', [f'A9_q2_cvar_compare.png', 'A10_season_cost.png',

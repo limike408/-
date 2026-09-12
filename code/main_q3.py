@@ -118,9 +118,10 @@ def analysis(price, dates, load, pv, fc3, rec):
     fig, ax = plt.subplots(figsize=(9, 5))
     ax.bar(x - w / 2, df.only0_total, w, label='仅0:00(不调整)')
     ax.bar(x + w / 2, df.roll_total, w, label='0/6/12/18 滚动')
-    ax.set_xticks(x); ax.set_xticklabels(df.day)
-    ax.set_ylabel('总购电费用(元)'); ax.set_title('问题3：是否引入多时刻预报')
-    ax.legend(); ax.grid(alpha=0.4, axis='y')
+    ax.set_xticks(x); ax.set_xticklabels(df.day, fontsize=11)
+    ax.set_ylabel('总购电费用(元)', fontsize=12); ax.set_title('问题3：是否引入多时刻预报', fontsize=13)
+    ax.legend(fontsize=11); ax.grid(alpha=0.4, axis='y')
+    ax.tick_params(labelsize=11)
     fig.tight_layout(); fig.savefig(os.path.join(C.FIG_DIR, 'q3_forecast_time.png'), dpi=150); plt.close(fig)
 
 

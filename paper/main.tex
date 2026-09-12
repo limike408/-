@@ -3,6 +3,12 @@
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{tikz}
+% 临时：禁用 PDF 书签（规避 MiKTeX fresh 写 .out 的崩溃 bug），编译稳定后恢复
+\hypersetup{bookmarks=false}
+% 临时：压制 overfull/underfull 消息，问题定位后移除
+\hfuzz=50pt\relax
+\hbadness=10000\relax
+\vbadness=10000\relax
 \usetikzlibrary{positioning,arrows.meta}
 \usepackage{listings}
 \usepackage{xcolor}
@@ -142,11 +148,15 @@
 波动，需建立两阶段随机规划：第一阶段计划购电对各情景共用，第二阶段按情景决策充放电与紧急
 购电；并以条件风险价值（CVaR）刻画购电费用的尾部风险，实现"以计划费换可靠性"。
 
-选型依据上，本问题的关键是\textbf{在"期望成本"与"尾部风险"之间做权衡}。若只最小化期望成本
-（$\lambda=0$），会低估极端缺电情景的高额紧急购电；而分布鲁棒、最小最大等风险模型虽更保守，
-却对分布假设敏感且难以解释。CVaR 具有\textbf{一致性、可线性化}两大数学优势，既能刻画
-$100(1-\beta)\%$ 置信水平下的平均超额损失，又可将非光滑的风险项改写为线性约束，使两阶段随
-机规划仍保持为可全局求解的线性规划，这是本文选用 CVaR 而非其他风险度量的核心原因。
+选型依据上，本问题的关键是\textbf{在"期望成本"与"尾部风险"之间做权衡}，可分解为以下三点：
+\begin{enumerate}
+    \item \textbf{权衡的必要性}：若只最小化期望成本（$\lambda=0$），会低估极端缺电情景的
+          高额紧急购电；而分布鲁棒、最小最大等风险模型虽更保守，却对分布假设敏感且难以解释。
+    \item \textbf{CVaR 的数学优势}：CVaR 具有一致性、可线性化两大性质，可刻画
+          $100(1-\beta)\%$ 置信水平下的平均超额损失。
+    \item \textbf{可求解性}：非光滑的风险项可改写为线性约束，使两阶段随机规划仍保持为可全局
+          求解的线性规划，这是本文选用 CVaR 而非其他风险度量的核心原因。
+\end{enumerate}
 
 \subsection{问题三的分析}
 多时刻（0/6/12/18）光伏预报信息随时间更新，可据此调整购电策略。引入"计划—调整"两阶段结构
@@ -179,26 +189,54 @@ $100(1-\beta)\%$ 置信水平下的平均超额损失，又可将非光滑的风
           生成分季情景并给出分季购电策略。
 \end{itemize}
 
+% 统一流程图样式：白底黑框细线、字号统一（参照国赛优秀论文风格）
+\tikzset{
+    flbox/.style={rectangle, draw=black, thin, fill=white, align=center,
+        minimum height=0.62cm, minimum width=3.55cm, inner sep=2pt, font=\small},
+    flarr/.style={-stealth, thin}
+}
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[node distance=1.0cm and 1.4cm, box/.style={rectangle,draw,thick,align=center,minimum height=0.9cm,rounded corners=2pt,fill=blue!6}]
-        \node[box] (q1) {问题一：确定性 LP\\每日计划购电 $P$};
-        \node[box, right=of q1] (q2) {问题二：两阶段随机+CVaR\\计划 $P$ / 紧急 $Q$};
-        \node[box, right=of q2] (q3) {问题三：三层滚动 MPC\\计划 $P$ / 调整 $A$ / 紧急 $Q$};
-        \node[box, below=0.9cm of q2] (q4) {问题四：波动电价重算\\统一框架 + 季节分型};
-        \draw[-stealth,thick] (q1) -- (q2);
-        \draw[-stealth,thick] (q2) -- (q3);
-        \draw[-stealth,thick] (q2.south) -- (q4.north);
-        \draw[-stealth,thick] (q3.south) -- (q4.north);
+    \begin{tikzpicture}[flbox/.append style={minimum width=3.0cm, minimum height=0.55cm}]
+        \node[flbox, font=\small\bfseries, minimum width=3.6cm] (root) {微网购电优化决策};
+        % 四个问题分支节点
+        \node[flbox, font=\small\bfseries, below=0.45cm of root, xshift=-5.1cm] (h1) {问题一：确定性 LP};
+        \node[flbox, font=\small\bfseries, below=0.45cm of root, xshift=-1.7cm] (h2) {问题二：随机规划};
+        \node[flbox, font=\small\bfseries, below=0.45cm of root, xshift=1.7cm] (h3) {问题三：滚动 MPC};
+        \node[flbox, font=\small\bfseries, below=0.45cm of root, xshift=5.1cm] (h4) {问题四：波动电价};
+        % 问题一列
+        \node[flbox, below=0.32cm of h1] (q1a) {日循环约束建模};
+        \node[flbox, below=0.32cm of q1a] (q1b) {HiGHS 全局最优};
+        \node[flbox, below=0.32cm of q1b] (q1c) {理论下界锚点};
+        % 问题二列
+        \node[flbox, below=0.32cm of h2] (q2a) {残差情景生成};
+        \node[flbox, below=0.32cm of q2a] (q2b) {两阶段随机规划};
+        \node[flbox, below=0.32cm of q2b] (q2c) {CVaR 保险权衡};
+        % 问题三列
+        \node[flbox, below=0.32cm of h3] (q3a) {四时点预报更新};
+        \node[flbox, below=0.32cm of q3a] (q3b) {违约—超额结算};
+        \node[flbox, below=0.32cm of q3b] (q3c) {近似最优评估};
+        % 问题四列
+        \node[flbox, below=0.32cm of h4] (q4a) {波动电价替换};
+        \node[flbox, below=0.32cm of q4a] (q4b) {统一内核复算};
+        \node[flbox, below=0.32cm of q4b] (q4c) {季节压力测试};
+        % 根到分支
+        \foreach \i in {h1,h2,h3,h4}{\draw[flarr] (root) -- (\i);}
+        % 各列向下
+        \foreach \a/\b in {q1a/q1b, q1b/q1c, q2a/q2b, q2b/q2c, q3a/q3b, q3b/q3c, q4a/q4b, q4b/q4c}{
+            \draw[flarr] (\a) -- (\b);}
     \end{tikzpicture}
-    \caption{本文技术路线：三层滚动随机 MPC 框架}\label{fig:route}
+    \caption{本文技术路线：确定性—随机—滚动—波动的递进框架}\label{fig:route}
 \end{figure}
 
 \subsection{数据探索与季节特征分析}
 在建立模型之前，先对全年数据做探索性分析，检验负荷、光伏与电价是否存在显著的季节规律，这
-是后续分季情景生成与分季策略的基础。将 2025 年按 春(3--5 月)/夏(6--8 月)/秋(9--11 月)/
-冬(12--2 月) 分组，统计日负荷与日光伏总量（图~\ref{fig:A2}）。结果表明：夏季负荷最高
-（$121530$~kWh/日），冬季光伏出力最低（$40335$~kWh/日，仅为夏季的 $63\%$）。
+是后续分季情景生成与分季策略的基础。本小节按以下顺序展开：
+\begin{enumerate}
+    \item \textbf{季节分组}：将 2025 年按春(3--5 月)/夏(6--8 月)/秋(9--11 月)/冬(12--2 月) 分组；
+    \item \textbf{负荷与光伏}：统计各季日负荷与日光伏总量（图~\ref{fig:A2}），结果表明夏季负荷
+          最高（$121530$~kWh/日）、冬季光伏出力最低（$40335$~kWh/日，仅为夏季的 $63\%$）。
+\end{enumerate}
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{figures_adv/A2_season_ld_pv.png}
@@ -223,27 +261,23 @@ $p=1.17\times10^{-16}$）：
 \end{table}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.68\textwidth]{figures_adv/A1_season_cost_box.png}
-    \caption{各季节日购电费分布}\label{fig:A1}
-\end{figure}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.68\textwidth]{figures_adv/A3_price_violin.png}
-    \caption{各季节日平均电价分布（附件 4）}\label{fig:A3}
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/A1_season_cost_box.png}
+        \caption{各季节日购电费分布}\label{fig:A1}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/A3_price_violin.png}
+        \caption{各季节日平均电价分布（附件 4）}\label{fig:A3}
+    \end{minipage}
 \end{figure}
 冬季购电费为春季的 $1.56$ 倍，其机理是"光伏最低 + 电价最高 + 负荷峰谷差最大"三重叠加。
 据此，在问题二的情景生成中按季节截取历史窗，并在问题四中按季节拆分解读电价波动风险。
 
 综合上述分析，本文的问题分析可抽象为"输入数据 $\to$ 统一建模内核 $\to$ 四子问题递进 $\to$
 结果输出与校验"的总体流程。各子问题的区别仅在于\textbf{不确定性刻画颗粒度、决策信息结构与价
-格冲击}，而同源共享功率—能量守恒内核与"计划—调整—紧急"三层购电结构。总体流程图
-（图~\ref{fig:flow}）直观展示了这一自上而下逐层递进的建模逻辑：
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{figures/flow_analysis.png}
-    \caption{问题分析总体流程图}
-    \label{fig:flow}
-\end{figure}
+格冲击}，而同源共享功率—能量守恒内核与"计划—调整—紧急"三层购电结构。
 
 \section{模型假设}
 \begin{enumerate}
@@ -343,6 +377,28 @@ $p=1.17\times10^{-16}$）：
 与单时段的充放功率，防止越限造成设备损坏，并隐含约定充放不可同时进行。
 
 \subsection{问题一：确定性每日计划（LP）}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=0.5cm and 0.5cm]
+        \node[flbox] (a1) {读取附件全年数据};
+        \node[flbox, right=of a1] (a2) {日期对齐与校验};
+        \node[flbox, right=of a2] (a3) {构建目标函数};
+        \node[flbox, below=of a3] (b3) {储能日循环约束};
+        \node[flbox, left=of b3] (b2) {逐日独立 LP 优化};
+        \node[flbox, left=of b2] (b1) {汇总全年购电结果};
+        \node[flbox, below=of b1] (c1) {输出指定时段计划};
+        \node[flbox, right=of c1] (c2) {能量守恒校验};
+        \node[flbox, right=of c2] (c3) {结果检验分析};
+        \draw[flarr] (a1) -- (a2); \draw[flarr] (a2) -- (a3);
+        \draw[flarr] (a3) -- (b3); \draw[flarr] (b3) -- (b2);
+        \draw[flarr] (b2) -- (b1); \draw[flarr] (b1) -- (c1);
+        \draw[flarr] (c1) -- (c2); \draw[flarr] (c2) -- (c3);
+    \end{tikzpicture}
+    \caption{问题一求解流程图}\label{fig:flowq1}
+\end{figure}
+问题一采用``逐日独立求解''的确定性路线：全年 365 天逐日建立 LP 并由 HiGHS 求全局最优，
+整体求解流程如图~\ref{fig:flowq1} 所示。
+
 \subsubsection{线性规划模型的建立}
 针对问题一"电价、负荷、光伏全已知"的完美信息场景，目标函数为最小化当日购电费用：
 \begin{equation}
@@ -359,11 +415,16 @@ $p=1.17\times10^{-16}$）：
 （HiGHS 求解器）求解。
 
 从最优策略的机理看，式~\eqref{eq:obj1} 仅对购电量 $P_t$ 计费，储能则作为"能量搬运工"
-把电能从低价时段搬运到高价时段：在电价洼地（夜间与光伏高发期）多购电充电，在电价/负荷峰期
-放电，从而用充电损耗（$10\%$）换取电价的价差套利。由于问题一是确定性完美信息，其最优解给出了
-\textbf{经济性的理论下界}，可作为后续各问题在不确定性下的对照基准。需要指出的是，问题一假设电价、负荷、光伏全部已知，因此在现实调度中并不成立；它的
-意义在于给出理论最优，并揭示"低充高放 + 谷段购电"这一储能/购电联动的经济机理，为问题二的
-随机化建模提供结构参考。
+把电能从低价时段搬运到高价时段。这一结论可从以下三点理解：
+\begin{enumerate}
+    \item \textbf{套利机理}：在电价洼地（夜间与光伏高发期）多购电充电，在电价/负荷峰期放电，
+          从而用充电损耗（$10\%$）换取电价的价差套利。
+    \item \textbf{理论下界}：由于问题一是确定性完美信息，其最优解给出了经济性的理论下界，
+          可作为后续各问题在不确定性下的对照基准。
+    \item \textbf{建模价值}：问题一的"完美信息"假设在现实调度中并不成立，它的意义在于给出
+          理论最优，并揭示"低充高放 + 谷段购电"这一储能/购电联动的经济机理，为问题二的随机化
+          建模提供结构参考。
+\end{enumerate}
 
 \subsubsection{结果分析}
 \begin{table}[H]
@@ -405,6 +466,28 @@ $p=1.17\times10^{-16}$）：
 \end{figure}
 
 \subsection{问题二：两阶段随机规划 + CVaR}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=0.5cm and 0.5cm]
+        \node[flbox] (a1) {读取历史负荷/光伏};
+        \node[flbox, right=of a1] (a2) {交叉验证选窗 $K$};
+        \node[flbox, right=of a2] (a3) {残差 bootstrap 情景};
+        \node[flbox, below=of a3] (b3) {两阶段随机规划};
+        \node[flbox, left=of b3] (b2) {固定计划按实际结算};
+        \node[flbox, left=of b2] (b1) {紧急购电 $Q$ 明细};
+        \node[flbox, below=of b1] (c1) {输出四指定日结果};
+        \node[flbox, right=of c1] (c2) {CVaR 参数敏感性};
+        \node[flbox, right=of c2] (c3) {结果检验分析};
+        \draw[flarr] (a1) -- (a2); \draw[flarr] (a2) -- (a3);
+        \draw[flarr] (a3) -- (b3); \draw[flarr] (b3) -- (b2);
+        \draw[flarr] (b2) -- (b1); \draw[flarr] (b1) -- (c1);
+        \draw[flarr] (c1) -- (c2); \draw[flarr] (c2) -- (c3);
+    \end{tikzpicture}
+    \caption{问题二求解流程图}\label{fig:flowq2}
+\end{figure}
+问题二在 0:00 依据历史信息一次性形成全天计划，"预报—情景—优化—结算"链式流程
+如图~\ref{fig:flowq2} 所示。
+
 \subsubsection{两阶段随机规划模型的建立}
 针对问题二"负荷与光伏实时波动、缺电按 5 倍价紧急购电"的不确定场景，当负荷与光伏实时波动、
 供电不足需紧急购电（5 倍电价）时，构建两阶段随机规划。设 $S$ 个
@@ -433,8 +516,19 @@ $\alpha$ 为自由变量（对应 VaR）。两阶段随机规划的一般理论�
 的量化）。
 
 在情景与点预报的构造上，本文坚持\textbf{信息因果}原则：每日 0:00 只使用当天之前的历史数据。
-具体地，点预报取负荷、光伏各自前 $K_{\text{L}}/K_{\text{P}}$ 天逐时段（144）的均值，K 由全年
-交叉验证按归一化 RMSE 从候选集 $\{7,15,30\}$ 选出（得 $K_{\text{L}}=15,\ K_{\text{P}}=7$）；
+具体地，点预报取负荷、光伏各自前 $K_{\text{L}}/K_{\text{P}}$ 天逐时段（144）的均值，$K$ 通过
+全年（2.1--12.31）逐日交叉验证，按归一化 RMSE 选取。为排除从稀疏候选集取点带来的偶然性，
+本文将窗口 $K$ 在 $\{1,\ldots,40\}$ 上做细粒度扫描（图~\ref{fig:Ksens}）：结果显示负荷的
+归一化 RMSE 在 $K\in[8,16]$ 呈浅谷、$K=15$ 落在谷底附近，而 $K=1$ 仅为无历史平滑的单日冷启动伪
+最优（物理上不可靠）；光伏的归一化 RMSE 在 $K\in[5,7]$ 呈接近水平的平坦平台（差异 $<5\times
+10^{-4}$），取整数周周期 $K=7$ 兼具最小化与可解释性。据此选定 $K_{\text{L}}=15,\ K_{\text{P}}=7$，
+并在后续以点预报为“居中基准”叠加残差情景，故 $K$ 的微小扰动对全年费用影响甚微（敏感性分析见
+下节），论证了 $K$ 选取的稳健性；
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures_adv/q2_K_sensitivity.png}
+    \caption{点预报窗口 $K$ 的全年交叉验证敏感性（上：负荷，下：光伏）}\label{fig:Ksens}
+\end{figure}
 情景则采用\textbf{整日成对残差 bootstrap}：先按最长时间窗取最近 $w$ 天历史，逐槽计算
 "实际$\ -$点预报"的整日残差，再有放回抽取 $S=30$ 个整天（负荷与光伏同一天成对取样，从而保留
 两者相关性），情景 = 点预报 + 抽取的整日残差，光伏截断到非负。2025-01-01 缺乏历史，以附件 1
@@ -481,6 +575,28 @@ $\lambda\in\{0,0.5,1,2,5\}$，以其计划购电费 $P$ 对当日实际负荷/�
 的折中正是 CVaR 风险权重的经济意义，其参数稳健性在第 6.2 节予以检验。
 
 \subsection{问题三：滚动计划—调整模型（MPC）}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=0.5cm and 0.5cm]
+        \node[flbox] (a1) {读取四时刻光伏预报};
+        \node[flbox, right=of a1] (a2) {整点插值映射};
+        \node[flbox, right=of a2] (a3) {制定计划购电策略};
+        \node[flbox, below=of a3] (b3) {紧急购电结算};
+        \node[flbox, left=of b3] (b2) {滚动调整优化};
+        \node[flbox, left=of b2] (b1) {计算违约加价};
+        \node[flbox, below=of b1] (c1) {汇总三层费用};
+        \node[flbox, right=of c1] (c2) {对比无调整方案};
+        \node[flbox, right=of c2] (c3) {结果检验分析};
+        \draw[flarr] (a1) -- (a2); \draw[flarr] (a2) -- (a3);
+        \draw[flarr] (a3) -- (b3); \draw[flarr] (b3) -- (b2);
+        \draw[flarr] (b2) -- (b1); \draw[flarr] (b1) -- (c1);
+        \draw[flarr] (c1) -- (c2); \draw[flarr] (c2) -- (c3);
+    \end{tikzpicture}
+    \caption{问题三求解流程图}\label{fig:flowq3}
+\end{figure}
+问题三在 0/6/12/18 四个时点滚动再计划并按``计划—调整—紧急''三层费用结算，
+求解流程如图~\ref{fig:flowq3} 所示。
+
 \subsubsection{滚动模型预测控制的建立}
 针对问题三"多时刻光伏预报随时间更新、调整触发作违约/超额惩罚"的序时决策场景，
 模型预测控制将动态优化与滚动更新结合，已被广泛用于微网调度\cite{cn:mpc2,cn:mpc}。设 0:00 发布
@@ -544,13 +660,16 @@ $2254548.5$~元，合计 $15263487.8$~元。表~\ref{tab:q3} 给出四个指定�
 \end{table}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{figures/q3_forecast_time.png}
-    \caption{问题三：是否需要引入多时刻预报（指定日期总费用对比）}\label{fig:q3}
-\end{figure}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.82\textwidth]{figures_adv/A11_q3_roll_compare.png}
-    \caption{问题三：仅 0:00 计划 vs 0/6/12/18 滚动的费用结构（四个指定日期堆叠柱）}\label{fig:q3roll}
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/q3_forecast_time.png}
+        \caption{问题三：是否需要引入多时刻预报（指定日期总费用对比）}\label{fig:q3}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/A11_q3_roll_compare.png}
+        \caption{问题三：仅 0:00 计划 vs 0/6/12/18 滚动的费用结构（四个指定日期堆叠柱）}\label{fig:q3roll}
+    \end{minipage}
 \end{figure}
 由表~\ref{tab:q3} 与图~\ref{fig:q3}、图~\ref{fig:q3roll}：引入多时刻预报可以更精细地重新分配购电时
 段，但在部分
@@ -574,6 +693,28 @@ $2254548.5$~元，合计 $15263487.8$~元。表~\ref{tab:q3} 给出四个指定�
 策略在冬季等高误差日的经济收益最为明显。
 
 \subsection{问题四：波动电价下的模型复算}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=0.5cm and 0.5cm]
+        \node[flbox] (a1) {读取附件波动电价};
+        \node[flbox, right=of a1] (a2) {电价数值化对齐};
+        \node[flbox, right=of a2] (a3) {替换电价输入};
+        \node[flbox, below=of a3] (b3) {对比固定电价};
+        \node[flbox, left=of b3] (b2) {重算问题三};
+        \node[flbox, left=of b2] (b1) {重算问题二};
+        \node[flbox, below=of b1] (c1) {分析波动影响};
+        \node[flbox, right=of c1] (c2) {输出结果文件};
+        \node[flbox, right=of c2] (c3) {结果检验分析};
+        \draw[flarr] (a1) -- (a2); \draw[flarr] (a2) -- (a3);
+        \draw[flarr] (a3) -- (b3); \draw[flarr] (b3) -- (b2);
+        \draw[flarr] (b2) -- (b1); \draw[flarr] (b1) -- (c1);
+        \draw[flarr] (c1) -- (c2); \draw[flarr] (c2) -- (c3);
+    \end{tikzpicture}
+    \caption{问题四求解流程图}\label{fig:flowq4}
+\end{figure}
+问题四以附件 4 波动电价替换固定电价后，复用问题二、三的统一内核重算并对比，
+求解流程如图~\ref{fig:flowq4} 所示。
+
 \subsubsection{波动电价模型的建立}
 针对问题四"外网电价实时波动"的价格冲击场景，设附件 4 的实时波动电价为 $p_t^{var}$（每 10 分钟
 一个值），问题二、三的目标函数与前述完全一致，
@@ -681,13 +822,16 @@ $\lambda=0$ 与 $\lambda=5$ 两档对比四日的"计划费—紧急费"结构�
 \end{table}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.68\textwidth]{figures_adv/A4_heatmap_lambda_beta.png}
-    \caption{风险权重 $\lambda$ 与置信水平 $\beta$ 对当日总费用的敏感性（热力图）}\label{fig:heatmap}
-\end{figure}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.82\textwidth]{figures_adv/A9_q2_cvar_compare.png}
-    \caption{$\lambda=0$ 与 $\lambda=5$ 下"计划费—紧急费"费用结构（四个指定日期堆叠柱）}\label{fig:q2cvar}
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/A4_heatmap_lambda_beta.png}
+        \caption{风险权重 $\lambda$ 与置信水平 $\beta$ 对当日总费用的敏感性（热力图）}\label{fig:heatmap}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/A9_q2_cvar_compare.png}
+        \caption{$\lambda=0$ 与 $\lambda=5$ 下"计划费—紧急费"费用结构（四个指定日期堆叠柱）}\label{fig:q2cvar}
+    \end{minipage}
 \end{figure}
 结果表明：随 $\lambda$ 增大，计划购电费小幅上抬，紧急购电显著回落，高风险日（09-23、12-21）
 总费用明显下降，低风险日（03-20）因几乎无缺电风险而轻微上行（$42582\to44125$ 元），风险规避
@@ -814,6 +958,37 @@ $p=1.17\times10^{-16}$，季节差异高度显著。进一步做季节两两比�
           亦可接入配电网规划与储能投资决策的前置比选\cite{cn:ahp}\cite{cn:topsis}，从而
           将本文"逐级递进的建模路线"固化为一套通用的方案评价方法论。
 \end{itemize}
+
+\subsection{成果展示平台}
+为便于成果展示与推广，本文基于统一求解内核开发了"微网购电智能分析平台"（单文件网页应用，
+ECharts 图表库本地化，离线可用）。平台完全面向本赛题，提供三类功能：
+\begin{enumerate}
+    \item \textbf{数据录入}：支持上传附件格式的 Excel/CSV（自动识别负荷/光伏/电价表，
+          全年 $365\times144$ 宽表自动按日聚合）与 24 时段手动填表两种方式，并自动解析回填；
+    \item \textbf{数据分析}：内置购电优化求解内核，一键输出全天购电量、购电费、峰谷价差与
+          节费率等关键指标，并给出分时段购电统计明细；
+    \item \textbf{数据可视化}：负荷—光伏—电价曲线、储能充放电计划（SOC 轨迹）与购电构成
+          联动展示，直观呈现"低充高放"经济机理。
+\end{enumerate}
+平台三部分界面如图~\ref{fig:platform} 所示。平台与本文正文模型共用同一套约束与结算口径，
+可作为模型的交互式演示与结果复核工具，支撑材料一并提交。
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/platform_input.png}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/platform_analysis.png}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures_adv/platform_vis.png}
+    \end{minipage}
+    \caption{微网购电智能分析平台：数据录入（左）、数据分析（中）、数据可视化（右）}\label{fig:platform}
+\end{figure}
 
 \section*{AI 工具使用说明}
 本参赛队在竞赛过程中使用了 AI 工具，主要用于语言润色、代码编写与调试、数值结果比对与

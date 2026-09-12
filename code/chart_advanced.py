@@ -110,43 +110,46 @@ for ai, lam in enumerate(LAMS):
         print(f'lam={lam} beta={beta} plan={pf:.0f} emerg={ef:.0f} total={pf+ef:.0f}')
 
 # 热力图（总费用）
-fig, ax = plt.subplots(figsize=(7.4, 5))
+fig, ax = plt.subplots(figsize=(8.2, 5.4))
 im = ax.imshow(grid, aspect='auto', cmap='YlOrRd')
-ax.set_xticks(range(len(BETS))); ax.set_xticklabels([str(b) for b in BETS])
-ax.set_yticks(range(len(LAMS))); ax.set_yticklabels([str(l) for l in LAMS])
+ax.set_xticks(range(len(BETS))); ax.set_xticklabels([str(b) for b in BETS], fontsize=11)
+ax.set_yticks(range(len(LAMS))); ax.set_yticklabels([str(l) for l in LAMS], fontsize=11)
 for r in range(len(LAMS)):
     for c in range(len(BETS)):
-        ax.text(c, r, f'{grid[r,c]/1e4:.1f}', ha='center', va='center', fontsize=8)
-ax.set_xlabel('CVaR 置信水平 β'); ax.set_ylabel('风险权重 λ')
-ax.set_title('图A4  λ-β 对当日总费用（万元）的敏感性（2025-03-20）')
-cb = fig.colorbar(im, ax=ax); cb.set_label('总费用（万元）')
+        ax.text(c, r, f'{grid[r,c]/1e4:.1f}', ha='center', va='center', fontsize=11)
+ax.set_xlabel('CVaR 置信水平 β', fontsize=12); ax.set_ylabel('风险权重 λ', fontsize=12)
+ax.set_title('图A4  λ-β 对当日总费用（万元）的敏感性（2025-03-20）', fontsize=13)
+cb = fig.colorbar(im, ax=ax); cb.set_label('总费用（万元）', fontsize=12)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A4_heatmap_lambda_beta.png'), dpi=150); plt.close(fig)
 
 # 帕累托前沿（β=0.9）
-fig, ax = plt.subplots(figsize=(7.4, 5))
-ax.plot(plan_arr[:, 2]/1e4, emerg_arr[:, 2]/1e4, '-o', color=CB[0], lw=1.8)
+fig, ax = plt.subplots(figsize=(8.2, 5.4))
+ax.plot(plan_arr[:, 2]/1e4, emerg_arr[:, 2]/1e4, '-o', color=CB[0], lw=2.0)
 for ai, lam in enumerate(LAMS):
-    ax.annotate(f'λ={lam}', (plan_arr[ai,2]/1e4, emerg_arr[ai,2]/1e4),
-                textcoords='offset points', xytext=(6, 4), fontsize=8)
-ax.set_xlabel('计划购电费（万元）'); ax.set_ylabel('紧急购电费（万元）')
-ax.set_title('图A5  计划购电费—紧急购电费 帕累托前沿（β=0.9, 2025-03-20）')
+    px, py = plan_arr[ai,2]/1e4, emerg_arr[ai,2]/1e4
+    dy = (8 if ai % 2 == 0 else -14) if ai < len(LAMS) - 1 else -14
+    ax.annotate(f'λ={lam}', (px, py), textcoords='offset points', xytext=(10, dy),
+                fontsize=11, bbox=dict(fc='white', ec='none', alpha=0.7, pad=1))
+ax.set_xlabel('计划购电费（万元）', fontsize=12); ax.set_ylabel('紧急购电费（万元）', fontsize=12)
+ax.set_title('图A5  计划购电费—紧急购电费 帕累托前沿（β=0.9, 2025-03-20）', fontsize=13)
+ax.tick_params(labelsize=11)
 ax.grid(alpha=0.3)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A5_pareto.png'), dpi=150); plt.close(fig)
 
 # ================= 图A6 雷达图 =================
-fig, ax = plt.subplots(figsize=(6.4, 6.2), subplot_kw=dict(polar=True))
+fig, ax = plt.subplots(figsize=(7.4, 6.6), subplot_kw=dict(polar=True))
 dims = ['经济性', '供电可靠性', '鲁棒性', '计算复杂度', '信息利用度']
 # 半定量打分 0-10：确定性LP / 两阶段随机 / 滚动MPC / 波动电价重算
 vals = dict(LP=[8, 4, 2, 9, 3], 随机=[6, 9, 8, 4, 7], MPC=[7, 8, 9, 3, 8], 波动=[5, 8, 8, 3, 9])
 N = len(dims); ang = np.linspace(0, 2*np.pi, N, endpoint=False).tolist(); ang += ang[:1]
 for k, (name, v) in enumerate(vals.items()):
     vv = v + v[:1]
-    ax.plot(ang, vv, label=name, color=CB[k], lw=1.6)
+    ax.plot(ang, vv, label=name, color=CB[k], lw=1.8)
     ax.fill(ang, vv, color=CB[k], alpha=0.12)
-ax.set_xticks(ang[:-1]); ax.set_xticklabels(dims)
-ax.set_ylim(0, 10); ax.set_yticks([2,4,6,8,10]); ax.set_yticklabels(['2','4','6','8','10'], fontsize=8)
-ax.set_title('图A6  四种模型在五维度上的对比（半定量评分）')
-ax.legend(loc='upper right', bbox_to_anchor=(1.28, 1.1), fontsize=8)
+ax.set_xticks(ang[:-1]); ax.set_xticklabels(dims, fontsize=12)
+ax.set_ylim(0, 10); ax.set_yticks([2,4,6,8,10]); ax.set_yticklabels(['2','4','6','8','10'], fontsize=10)
+ax.set_title('图A6  四种模型在五维度上的对比（半定量评分）', fontsize=13)
+ax.legend(loc='upper right', bbox_to_anchor=(1.32, 1.12), fontsize=11)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A6_radar.png'), dpi=150); plt.close(fig)
 
 # ================= 图A7 光伏预报误差 Q-Q =================
@@ -180,14 +183,57 @@ else:
     rp = lp.solve_day_plan(fp, pv[i], load[i], E)
     P = rp['P'].sum(); G = pv[i].sum(); F = (C.ETA*rp['f']).sum()   # 放电(输出侧)
     D = load[i].sum(); Ch = rp['c'].sum(); R = rp['R'].sum()
-    fig, ax = plt.subplots(figsize=(8.6, 5.6))
-    sk = Sankey(ax=ax, scale=1.0/D*1e4, offset=0.35, format='%.0f', unit='kWh')
-    sk.add(flows=[P, G, F, -D, -Ch, -R],
-           labels=['电网购电', '光伏出力', '储能放电', '负荷', '充电', '弃光'],
-           orientations=[0, 0, 0, -1, 1, 1], trunklength=1.4, pathlengths=[0.6]*6)
-    diag = sk.finish()
-    ax.set_title('图A8  2025-06-21 微网能量流向桑基图（完美信息日）')
-    fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A8_sankey.png'), dpi=150); plt.close(fig)
+    # 标准两列能量流向图（自绘，标签外置零遮挡；替代 matplotlib.sankey 楔形旧图）
+    from matplotlib.path import Path
+    from matplotlib.patches import PathPatch, Rectangle
+    A8C = ['#0072B2', '#D55E00', '#009E73']
+    # 流带分解（守恒：P + (G-R-Ch) + F = D；Ch、R 记光伏）
+    assert G - R - Ch > 0, '光伏直供为负，分带方案不适用'
+    bands = [(0, 0, P), (1, 0, G - R - Ch), (1, 1, Ch), (1, 2, R), (2, 0, F)]
+    L_NAMES, R_NAMES = ['电网购电', '光伏出力', '储能放电'], ['负荷', '储能充电', '弃光']
+    L_VALS, R_VALS = [P, G, F], [D, Ch, R]
+    SRC_COLOR = {0: A8C[0], 1: A8C[1], 2: A8C[2]}
+    TP = sum(v for _, _, v in bands)
+    Y0, H, GAP = 0.12, 0.74, 0.035
+    def _stack(vals):
+        hs = [v / TP * (H - GAP * (len(vals) - 1)) for v in vals]
+        out, y = [], 1.0
+        for h in hs:
+            out.append((y, y - h)); y -= h + GAP
+        return out
+    LT, RT = _stack(L_VALS), _stack(R_VALS)
+    X0, X1, W = 0.30, 0.70, 0.028
+    fig, ax = plt.subplots(figsize=(9.2, 5.0))
+    for k, (t, b) in enumerate(LT):
+        ax.add_patch(Rectangle((X0 - W, b), W, t - b, facecolor=SRC_COLOR[k],
+                               edgecolor='black', linewidth=0.8, alpha=0.95))
+        ax.text(X0 - W - 0.02, (t + b) / 2, f'{L_NAMES[k]}\n{L_VALS[k]:,.0f} kWh',
+                ha='right', va='center', fontsize=12)
+    for k, (t, b) in enumerate(RT):
+        ax.add_patch(Rectangle((X1, b), W, t - b,
+                               facecolor=['#444444', A8C[2], '#888888'][k],
+                               edgecolor='black', linewidth=0.8, alpha=0.95))
+        ax.text(X1 + W + 0.02, (t + b) / 2, f'{R_NAMES[k]}\n{R_VALS[k]:,.0f} kWh',
+                ha='left', va='center', fontsize=12)
+    rcur = {k: RT[k][0] for k in range(3)}
+    lcur = {k: LT[k][0] for k in range(3)}
+    for (s, t, v) in bands:
+        h = v / TP * (H - GAP * (len(R_VALS) - 1))
+        y0t, y0b = lcur[s], lcur[s] - h
+        y1t, y1b = rcur[t], rcur[t] - h
+        lcur[s] -= h; rcur[t] -= h
+        xm = (X0 + X1) / 2
+        pth = Path([(X0, y0t), (xm, y0t), (xm, y1t), (X1, y1t),
+                    (X1, y1b), (xm, y1b), (xm, y0b), (X0, y0b), (X0, y0t)],
+                   [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4,
+                    Path.LINETO, Path.CURVE4, Path.CURVE4, Path.CURVE4, Path.CLOSEPOLY])
+        ax.add_patch(PathPatch(pth, facecolor=SRC_COLOR[s], alpha=0.35, edgecolor='none'))
+    ax.set_xlim(0, 1); ax.set_ylim(0.07, 1.02); ax.axis('off')
+    fig.tight_layout()
+    for out in {OUT, os.path.join(C.C_BASE, 'paper', 'figures_adv')}:
+        os.makedirs(out, exist_ok=True)
+        fig.savefig(os.path.join(out, 'A8_sankey.png'), dpi=200)
+    plt.close(fig)
     A8 = True
 
 print('\n全部图表已输出至', OUT)

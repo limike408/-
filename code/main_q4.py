@@ -122,9 +122,10 @@ def shell():
     ax.plot(x, mean_p, lw=1.2, label='附件4 波动电价(日均)')
     ax.axhline(C.EMERG_MULT * np.median(mean_p), color='r', ls='--', lw=1,
                label='固定电价(附件1,均值省略)')
-    ax.set_xlabel('日期索引(1.1起)'); ax.set_ylabel('平均电价(元/kWh)')
-    ax.set_title('问题4：波动电价(附件4)与求解区间示意')
-    ax.legend(); ax.grid(alpha=0.3)
+    ax.set_xlabel('日期索引(1.1起)', fontsize=12); ax.set_ylabel('平均电价(元/kWh)', fontsize=12)
+    ax.set_title('问题4：波动电价(附件4)与求解区间示意', fontsize=13)
+    ax.legend(fontsize=11); ax.grid(alpha=0.3)
+    ax.tick_params(labelsize=11)
     fig.tight_layout(); fig.savefig(os.path.join(C.FIG_DIR, 'q4_price.png'), dpi=150); plt.close(fig)
     print('图已存', os.path.join(C.FIG_DIR, 'q4_price.png'))
 
