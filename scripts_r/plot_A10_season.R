@@ -21,7 +21,7 @@ p <- ggplot(long, aes(x = seas, y = val, fill = grp)) +
             position = position_dodge(0.7), vjust = -0.4,
             family = ZHFAM, size = 3.4) +
   geom_text(data = d, aes(x = seas, y = pmax(q3_fix, q3_var) + 0.4,
-                          label = sprintf("+%.1f%%", up3)),
+                          label = sprintf("%+.1f%%", up3)),
             inherit.aes = FALSE, colour = "#C44E52", family = ZHFAM, size = 3.8) +
   scale_fill_manual(values = c("固定电价" = "#4C72B0", "波动电价" = "#DD8452")) +
   labs(title = "问题四：波动电价下季节日均费用的季节性差异（问题三）",

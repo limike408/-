@@ -20,7 +20,7 @@ long <- bind_rows(
 
 p <- ggplot(long, aes(x = grp)) +
   geom_col(aes(y = grid, fill = "电网费"), width = 0.62) +
-  geom_col(aes(y = tot, fill = "紧急购电费"), width = 0.62) +
+  geom_col(aes(y = emer, fill = "紧急购电费"), width = 0.62) +
   geom_text(aes(y = tot + 0.08, label = sprintf("%.1f", tot)),
             family = ZHFAM, size = 3.6) +
   facet_wrap(~ day, nrow = 1) +

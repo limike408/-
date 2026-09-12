@@ -16,9 +16,10 @@ d <- d %>% mutate(day = factor(daylab[day], levels = unname(daylab)),
                   lam_lab = factor(sprintf("λ=%g", lam),
                                    levels = c("λ=0", sprintf("λ=%g", lam_star))))
 
+d <- d %>% mutate(emerg_fee = total - plan_fee)
 p <- ggplot(d, aes(x = lam_lab)) +
   geom_col(aes(y = plan_fee / 1e4, fill = "计划购电费"), width = 0.62) +
-  geom_col(aes(y = total / 1e4, fill = "紧急购电费"), width = 0.62) +
+  geom_col(aes(y = emerg_fee / 1e4, fill = "紧急购电费"), width = 0.62) +
   geom_text(aes(y = total / 1e4 + 0.12, label = sprintf("%.1f", total / 1e4)),
             family = ZHFAM, size = 3.6) +
   facet_wrap(~ day, nrow = 1) +

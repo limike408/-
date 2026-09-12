@@ -13,7 +13,7 @@ d <- d %>%
 
 p <- ggplot(d, aes(x = label)) +
   geom_col(aes(y = grid_fee / 1e6), fill = "#4C72B0", width = 0.5) +
-  geom_col(aes(y = total / 1e6), fill = "#C44E52", width = 0.5) +
+  geom_col(aes(y = emerg_fee / 1e6), fill = "#C44E52", width = 0.5) +
   geom_text(aes(y = total / 1e6 + 0.35, label = sprintf("%.0f 万元", total / 1e4)),
             family = ZHFAM, size = 4.2) +
   geom_text(aes(y = (grid_fee + emerg_fee / 2) / 1e6,
