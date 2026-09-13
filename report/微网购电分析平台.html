@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微网购电智能分析平台 · C 题</title>
+<script src="lib/echarts.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f4f7fb; --card:#ffffff; --line:#e3e9f1;
+  --pr:#2563eb; --pr2:#3b82f6; --ok:#16a34a; --wr:#f59e0b; --dgr:#d0021b;
+  --txt:#1f2937; --mut:#6b7280;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:linear-gradient(180deg,#eef3fb,#f4f7fb);color:var(--txt);line-height:1.65}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 20px 60px}
+
+header{display:flex;align-items:center;gap:14px;padding:20px 0 6px}
+header .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#38bdf8);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px}
+header h1{font-size:22px}
+header p{color:var(--mut);font-size:13px}
+.menu{margin:14px 0 0;display:flex;gap:8px;flex-wrap:wrap}
+.menu button{border:1px solid var(--line);background:#fff;color:var(--txt);padding:9px 18px;border-radius:10px;font-size:14px;cursor:pointer;transition:.15s}
+.menu button.active{background:var(--pr);border-color:var(--pr);color:#fff}
+.menu button:hover{background:#eff4ff;border-color:#bcd0ff}
+.menu button.active:hover{background:var(--pr2)}
+
+.panel{display:none;margin-top:18px}
+.panel.show{display:block}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px;box-shadow:0 1px 3px rgba(20,40,80,.05)}
+.card h2{font-size:17px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card h2 small{font-weight:normal;color:var(--mut);font-size:12.5px}
+.card .desc{color:var(--mut);font-size:13px;margin-bottom:14px}
+
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:860px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+label b{color:var(--txt)}
+input[type=number],input[type=text],select{
+  width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;background:#fbfdff}
+input:focus,select:focus{outline:none;border-color:var(--pr2)}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--pr);color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:14px;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--pr2)}
+.btn.ghost{background:#fff;color:var(--pr);border:1px solid #bcd0ff}
+.btn.ghost:hover{background:#eff4ff}
+.btn.attach{background:#fff;color:var(--ok);border:1px solid #bfe6cf}
+.btn.attach:hover{background:#effaf4}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+
+kpi{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+kpi .box{flex:1;min-width:130px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+kpi .box b{display:block;font-size:21px;color:var(--pr)}
+kpi .box small{color:var(--mut);font-size:12px}
+
+.chart{width:100%;height:330px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--line)}
+th{color:var(--mut);font-weight:600}
+tr:hover td{background:#f7fafe}
+input.input-cell{width:70px;padding:5px;text-align:center;border:1px solid var(--line);border-radius:6px}
+
+.hint{background:#f0f6ff;border:1px solid #cfe0ff;color:#2563eb;border-radius:10px;padding:12px 14px;font-size:13px;margin-top:12px}
+tab{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+tab button{border:1px solid var(--line);background:#fff;padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer}
+tab button.active{background:#eef4ff;border-color:#bcd0ff;color:var(--pr);font-weight:600}
+.hidden{display:none}
+footer{margin-top:40px;text-align:center;color:#9aa4b5;font-size:12.5px}
+.fileinfo{display:inline-flex;align-items:center;gap:8px;background:#f0f9f4;border:1px solid #bfe6cf;color:#15803d;padding:7px 14px;border-radius:8px;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">微</div>
+  <div>
+    <h1>微网购电智能分析平台</h1>
+    <p>数据录入 · 上传附件 · 数据分析 · 可视化 —— 2026 数学建模 C 题专用</p>
+  </div>
+</header>
+
+<div class="menu">
+  <button class="active" data-panel="inputs">① 数据录入</button>
+  <button data-panel="analysis">② 数据分析</button>
+  <button data-panel="visual">③ 数据可视化</button>
+</div>
+
+<!-- ============ ① 数据录入 ============ -->
+<div class="panel show" id="panel-inputs">
+  <div class="card">
+    <h2>导入数据 <small>支持上传附件或手动填写，两者皆可</small></h2>
+    <p class="desc">本平台完全服务于微网购电问题。可上传附件中的<code>负荷 / 光伏 / 电价</code>数据表（Excel .xlsx 或 CSV），或在上方表格中手动填写 / 修改时段数据。上传后会自动解析。</p>
+    <div class="btnrow">
+      <button class="btn attach" onclick="document.getElementById('file').click()">📤 上传附件（Excel/CSV）</button>
+      <input type="file" id="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleFile(event)">
+      <button class="btn ghost" onclick="loadExample()">内置示例数据</button>
+      <button class="btn ghost" onclick="resetManual()">清空重填</button>
+    </div>
+    <div id="fileinfo"></div>
+    <div class="hint">
+      自动识别三列：<b>负荷(kW)</b>、<b>光伏(kW)</b>、<b>电价(元/kWh)</b>。若你的数据是全年 365×144（10 分钟农历），平台会自动求日均值合成 24 时段示例；若是 24 时段整点，则直接采用。识别列名支持：<code>load/负荷/P/L</code>、<code>pv/光伏/G</code>、<code>price/电价/price_kWh/p</code>。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>时段数据表 <small>手动编辑 · 24 整点时段</small></h2>
+    <div style="overflow:auto;max-height:420px">
+    <table id="tbl">
+      <thead><tr><th>时段</th><th>负荷 kW</th><th>光伏 kW</th><th>电价 元/kWh</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>储能与结算参数</h2>
+    <div class="grid g4">
+      <div><label>储能容量 <b>SOC<sub>max</sub></b> (kWh)</label><input type="number" id="socmax" value="12000" step="100"></div>
+      <div><label>最大充放功率 (kW)</label><input type="number" id="pwrmax" value="5000" step="100"></div>
+      <div><label>充/放电效率 <b>η</b> (%)</label><input type="number" id="eta" value="90" min="0" max="100"></div>
+      <div><label>紧急购电价倍率</label><input type="number" id="emerg" value="5" step="0.5"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ② 数据分析 ============ -->
+<div class="panel" id="panel-analysis">
+  <div class="card" id="ana-overview">
+    <h2>运行概览</h2>
+    <div class="grid g2">
+      <div>
+        <label><b>典型日</b>（用于生成调度方案）</label>
+        <select id="avgSel">
+          <option value="1">求 24 时段均值（适用全年/多日数据）</option>
+          <option value="2">取装机典型日（峰值负荷日）</option>
+        </select>
+      </div>
+      <div>
+        <label><b>分析目标</b></label>
+        <select id="goal">
+          <option value="mincost">最小化购电费（LP 低充高放）</option>
+          <option value="flat">全年均值（对比基准）</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" onclick="runAnalysis()">▶ 运行购电优化分析</button>
+    <div id="analytics"><kpi><div class="box"><b>—</b><small>全天购电量 kWh</small></div><div class="box"><b>—</b><small>购电费 元</small></div><div class="box"><b>—</b><small>峰谷价差 元/kWh</small></div><div class="box"><b>—</b><small>理论节费（LP vs 均值）</small></div></kpi></div>
+  </div>
+  <div class="card">
+    <h2>分时段统计分析</h2>
+    <div id="statsBack"><!-- 由JS填充表格 --></div>
+  </div>
+</div>
+
+<!-- ============ ③ 可视化 ============ -->
+<div class="panel" id="panel-visual">
+  <div class="card">
+    <h2>负荷 · 光伏 · 电价 曲线</h2>
+    <div id="chartLdPv" class="chart"></div>
+  </div>
+  <div class="grid g2" style="align-items:start">
+    <div class="card">
+      <h2>储能充放电计划（SOC）</h2>
+      <div id="chartSoc" class="chart"></div>
+    </div>
+    <div class="card">
+      <h2>购电构成</h2>
+      <div id="chartPie" class="chart"></div>
+    </div>
+  </div>
+</div>
+
+<footer>微网购电智能分析平台 · 统一能量守恒框架 · 数据驱动 · 结果可复现</footer>
+</div>
+
+<script>
+const DT=1/6, PWR=5000, SOCMAX=12000;
+let load=[],pv=[],price=[];     // 24 时段
+let charts={};
+
+// ---------- 表格 ----------
+function initTable(){
+  const tb=document.getElementById('tbody');
+  let h='';
+  for(let i=0;i<24;i++){h+=`<tr>
+    <td>${i}:00</td>
+    <td><input class="input-cell" data-k="load" data-i="${i}" value="0"></td>
+    <td><input class="input-cell" data-k="pv" data-i="${i}" value="0"></td>
+    <td><input class="input-cell" data-k="price" data-i="${i}" value="0"></td>
+  </tr>`;}
+  tb.innerHTML=h;
+  document.querySelector('#tbl').addEventListener('input',e=>{
+    const el=e.target; if(!el.dataset.k)return;
+    const i=+el.dataset.i,v=+el.value||0;
+    if(el.dataset.k==='load')load[i]=v;
+    else if(el.dataset.k==='pv')pv[i]=v;
+    else price[i]=v;
+  });
+}
+function syncTable(){
+  for(let i=0;i<24;i++){
+    if(load[i]!==undefined)document.querySelector(`input[data-k="load"][data-i="${i}"]`).value=load[i];
+    if(pv[i]!==undefined)document.querySelector(`input[data-k="pv"][data-i="${i}"]`).value=pv[i];
+    if(price[i]!==undefined)document.querySelector(`input[data-k="price"][data-i="${i}"]`).value=price[i];
+  }
+}
+function resetManual(){load=new Array(24).fill(0);pv=new Array(24).fill(0);price=new Array(24).fill(0);syncTable();}
+function colName(keys,names){for(const n of names)if(keys.some(k=>String(k).toLowerCase().includes(n)))return String((keys.find(k=>String(k).toLowerCase().includes(n))));return null;}
+
+// ---------- 内置示例（24 整点）----------
+function loadExample(){
+  load=[820,760,700,680,720,860,980,1150,1230,1180,1060,900,850,880,1050,1250,1380,1420,1360,1280,1150,1020,920,860];
+  pv=  [0,0,0,0,10,70,180,340,520,700,820,880,850,780,650,430,210,40,0,0,0,0,0,0];
+  const pf=[0.55,0.5,0.48,0.46,0.5,0.6,0.75,0.85,1,0.9,0.8,0.7,0.65,0.68,0.95,1.15,1.25,1.35,1.2,1.05,0.9,0.8,0.7,0.6];
+  price=pf.map(x=>+x.toFixed(3));
+  syncTable(); runAll();
+}
+
+// ---------- 文件上传 ----------
+function sheetToGrid(ws){
+  // 统一把 sheet 读成二维数组（跳过完全空行）
+  return XLSX.utils.sheet_to_json(ws,{header:1}).filter(r=>r&&r.some(c=>c!==undefined&&c!==null&&c!==''));
+}
+function handleFile(ev){
+  const f=ev.target.files[0]; if(!f)return;
+  const ext=f.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=e=>{
+    let raw=e.target.result;
+    const sheets={};
+    if(ext==='csv'){
+      sheets[0]=csvParse(raw);
+    } else {
+      const wb=XLSX.read(new Uint8Array(raw));
+      wb.SheetNames.forEach(n=>{sheets[n]=sheetToGrid(wb.Sheets[n]);});
+    }
+    ingestAll(sheets,f.name);
+  };
+  reader.readAsArrayBuffer(f);
+}
+function csvParse(raw){
+  const lines=raw.replace(/\r/g,'').split('\n').filter(l=>l.trim()!=='');
+  return lines.map(l=>l.split(/[,;\t]+/));
+}
+function sheetToColumns(grid,sheetKey){
+  // 解析单个 sheet：支持 (表头 含 负荷/光伏/电价 列) 或 (日期列 + N 个整点/10分钟时段列)
+  if(!grid||!grid.length)return null;
+  const kc=grid.map(r=>r.map(c=>String(c==null?'':c).toLowerCase()));
+  let hi=0; for(let i=0;i<kc.length;i++){if(kc[i].some(c=>['load','负荷','p','price','电价','光伏','pv','g','time','时间'].includes(c))){hi=i;break;}}
+  const head=kc[hi];
+  const cLoad=colName(head,['load','负荷','p_l','pl']);
+  const cPv=colName(head,['pv','光伏','g']);
+  const cPrice=colName(head,['price','电价','元']); // 注意不含单独 'p'
+  // sheet 名辅助判断（附件2 的“小区负载/光伏发电实际功率”）
+  const sk=String(sheetKey||'').toLowerCase();
+  const skPv=/光伏|pv|power|发电|出力/.test(sk)&&!/负荷|负载/.test(sk);
+  const skLoad=/负荷|负载|load|小区/.test(sk);
+  // 情形A：宽表（一行=一个日期，N 个时段列）—— 列头形如 00:10:00
+  const hh=String(head[head.length-1]||'');
+  const isWide=/\d{1,2}:\d{2}/.test(head.slice(1).join(' ')) || /\d{1,2}:\d{2}/.test(hh);
+  if(isWide){
+    const rows=grid.slice(hi+1);
+    const ncols=Math.max(1,head.length-1);
+    let block=(ncols>=96?Math.round(ncols/24):1); if(block<1)block=1;
+    const D=new Array(24).fill(0);
+    for(let b=0;b<24;b++){
+      let s=0,cnt=0;
+      for(const r of rows){
+        const lo=1+b*block, hi2=Math.min(1+(b+1)*block, head.length);
+        for(let j=lo;j<hi2;j++){const v=+r[j]||0;s+=v;cnt++;}
+      }
+      D[b]=cnt?s/cnt:0;
+    }
+    // 依据表头 + sheet 名识别该宽表类型
+    const headtxt=head.slice(1).join(' ');
+    let kind='load';
+    if(skPv||/光伏|pv|prediction|forecast|预测|出力/i.test(headtxt))kind='pv';
+    else if(!skLoad&&(/电价|price|元|price\//i.test(headtxt)))kind='price';
+    else if(skLoad||/负荷|负载|load/i.test(headtxt))kind='load';
+    return {load:kind==='load'?D:Array(24).fill(0),
+            pv:kind==='pv'?D:Array(24).fill(0),
+            price:kind==='price'?D:Array(24).fill(0),
+            kind, wide:true};
+  }
+  // 情形B：窄表（一行=一个时段）—— 需同时有负荷列（和可选光伏/电价列）
+  if(cLoad){
+    let rows=grid.slice(hi+1).map(r=>r.map(c=>+c||0)).filter(r=>r.some(v=>v!==0));
+    const n=rows.length;
+    const get=r=>c=>{const idx=head.indexOf(c);return r[idx]??0;};
+    const L=rows.map(r=>get(r)(cLoad)),
+          P=rows.map((r,i)=>cPv?get(r)(cPv):0),
+          PR=rows.map((r,i)=>cPrice?get(r)(cPrice):0.9);
+    if(n>=24){
+      const block=Math.floor(n/24);
+      const D=new Array(24).fill(0),P2=new Array(24).fill(0),PR2=new Array(24).fill(0);
+      for(let i=0;i<24;i++)for(let j=i*block;j<(i+1)*block&&j<n;j++){D[i]+=L[j]/block;P2[i]+=P[j]/block;PR2[i]+=PR[j]/block;}
+      return {load:D,pv:P2,price:PR2};
+    }
+    return {load:L,pv:P,price:PR};
+  }
+  return null;
+}
+function aggregateDays(mat){
+  // mat: {load:[N],pv:[N],price:[N]} 可能是长序列 → 化简为 24 时段（分块均值）
+  const n=mat.load.length;
+  if(n<=24){
+    let o={load:[...mat.load],pv:[...mat.pv],price:[...mat.price]};
+    while(o.load.length<24)o.load.push(0);
+    while(o.pv.length<24)o.pv.push(0);
+    while(o.price.length<24)o.price.push(o.price[0]||0.9);
+    return o;
+  }
+  const block=Math.floor(n/24);
+  let o={load:[],pv:[],price:[]};
+  for(let i=0;i<24;i++){let a=b=c=0,cnt=0;for(let j=i*block;j<(i+1)*block&&j<n;j++){a+=mat.load[j]/block;b+=mat.pv[j]/block;c+=mat.price[j]/block;cnt++;}o.load.push(a);o.pv.push(b);o.price.push(c);}
+  return o;
+}
+function ingestAll(sheets,fileName){
+  const names=Object.keys(sheets);
+  let coll={load:Array(24).fill(0),pv:Array(24).fill(0),price:Array(24).fill(0)};
+  let got={load:false,pv:false,price:false};
+  const notes=[];
+  const acc=(k,d)=>{if(!got[k]){coll[k]=d.slice();got[k]=true;}};
+  for(const key of names){
+    const grid=sheets[key];
+    const col=sheetToColumns(grid,key);
+    if(!col)continue;
+    notes.push(`sheet“${key}”：${col.wide?'宽表(日期×时段)':'窄表(逐行)'}→${col.kind||'复合'}`);
+    // 宽表：按 kind 归入
+    if(col.wide){
+      if(col.kind==='load'&&col.load.some(v=>v>0))acc('load',col.load);
+      if(col.kind==='pv'&&col.pv.some(v=>v>0))acc('pv',col.pv);
+      if(col.kind==='price'&&col.price.some(v=>v>0))acc('price',col.price);
+      continue;
+    }
+    // 窄表：任一枚非零列都吸收
+    if(col.load&&col.load.some(v=>v!==0))acc('load',col.load);
+    if(col.pv&&col.pv.some(v=>v!==0))acc('pv',col.pv);
+    if(col.price&&col.price.some(v=>v!==0))acc('price',col.price);
+  }
+  if(!got.load){alert('未识别到负荷数据。请上传含 负荷(load/负荷) 的 Excel/CSV，或同时含负荷/光伏/电价 sheet。');return;}
+  // 电价缺省用 0.9；光伏缺省用 0
+  if(!got.price)coll.price=Array(24).fill(0.9);
+  if(!got.pv)coll.pv=Array(24).fill(0);
+  const agg=aggregateDays({load:coll.load,pv:coll.pv,price:coll.price});
+  load=agg.load;pv=agg.pv;price=agg.price;
+  document.getElementById('fileinfo').innerHTML=`<span class="fileinfo">✔ 已解析 ${fileName}（${notes.join('；')}）→ 24 时段</span>`;
+  syncTable(); runAll();
+}
+
+// ---------- LP 求解（低充高放，最小购电费）----------
+function solveLP({S0=6000}){
+  const socmax=+document.getElementById('socmax').value||12000;
+  const eta=(+document.getElementById('eta').value||90)/100;
+  const emax=(+document.getElementById('pwrmax').value||PWR)*DT;
+  const T=24;
+  const soci=1200, soch=socmax;
+  // 简化贪心 + 平衡：优先低价充电、高价放电，满足平衡与SOC约束
+  let soc=S0, plan=new Array(T).fill(0), cur=0;
+  let cheapest=[...price].map((p,i)=>p).sort((a,b)=>a-b);
+  // 先贪心填电池：在相对低价时段充，高价时段放
+  let net=new Array(T).fill(0);
+  for(let t=0;t<T;t++)net[t]=load[t]-pv[t]; // 净负荷
+  let charge=0; // 累计需充电能量(kWh) 用低价
+  for(let t=0;t<T;t++){net[t]=load[t]-pv[t];}
+  // 计算理论最小：全年价格加权购买全部负净需求 + 电池套利
+  // 简化：若净负荷>0需购电，储能帮助削峰
+  let buy=0, eCost=0;
+  // 按价格排序拾取：对负净负荷(有光伏富余)充电
+  let idx=[...Array(T).keys()].sort((a,b)=>price[a]-price[b]);
+  let socC=S0;
+  for(const t of idx){ if(net[t]<0 && socC+(-net[t])*DT<=soch){socC+=(-net[t])*DT;} }
+  // 高价放电给正净负荷
+  let idxD=[...Array(T).keys()].sort((a,b)=>price[b]-price[a]);
+  for(const t of idxD){ if(net[t]>0){ const need=net[t]*DT; const avail=(socC-soci)/eta; const dis=Math.min(need,avail); socC-=dis*eta; net[t]=Math.max(0,net[t]-dis)/*已用光伏*/; buy+=need-dis; eCost+=(need-dis)*price[t];} else {net[t]=0;}}
+  // 剩余正净负荷购电
+  for(let t=0;t<T;t++){ if(net[t]>0){buy+=net[t]*DT; eCost+=net[t]*DT*price[t];} }
+  return {buy,eCost,soc,socC};
+}
+function runAnalysis(){
+  const r=solveLP({});
+  const totBuy=r.buy, cost=r.eCost;
+  const pmin=Math.min(...price),pmax=Math.max(...price);
+  // 均值方案
+  const avgP=price.reduce((a,b)=>a+b)/price.length;
+  const meanCost=load.reduce((s,l,i)=>s+Math.max(0,(l-pv[i]))*DT*avgP,0);
+  document.getElementById('analytics').innerHTML=`<kpi>
+    <div class="box"><b>${totBuy.toFixed(0)}</b><small>全天购电量 kWh</small></div>
+    <div class="box"><b>${cost.toFixed(0)}</b><small>购电费 元</small></div>
+    <div class="box"><b>${(pmax-pmin).toFixed(3)}</b><small>峰谷价差 元/kWh</small></div>
+    <div class="box"><b>${((meanCost-cost)/meanCost*100).toFixed(1)}%</b><small>较均值方案节费</small></div>
+  </kpi>`;
+  fillStats(cost);
+}
+function fillStats(cost){
+  const tb=document.getElementById('statsBack');
+  let h='<table><tr><th>时段</th><th>负荷</th><th>光伏</th><th>净负荷</th><th>电价</th><th>时段购电费(元)</th></tr>';
+  for(let i=0;i<24;i++){const net=load[i]-pv[i];const b=Math.max(0,net)*DT;h+=`<tr><td>${i}:00</td><td>${load[i].toFixed(0)}</td><td>${pv[i].toFixed(0)}</td><td>${net.toFixed(0)}</td><td>${price[i].toFixed(3)}</td><td>${(b*price[i]).toFixed(2)}</td></tr>`;}
+  h+='</table>';
+  tb.innerHTML=h;
+}
+
+// ---------- 可视化 ----------
+function initCharts(){
+  charts.ld=new echarts.init(document.getElementById('chartLdPv'));
+  charts.soc=new echarts.init(document.getElementById('chartSoc'));
+  charts.pie=new echarts.init(document.getElementById('chartPie'));
+  window.addEventListener('resize',()=>Object.values(charts).forEach(c=>c&&c.resize()));
+}
+function renderCharts(){
+  const x=Array.from({length:24},(_,i)=>`${i}:00`);
+  charts.ld.setOption({tooltip:{trigger:'axis'},legend:{top:0},grid:{left:50,right:50,top:34,bottom:28},
+    xAxis:{type:'category',data:x},yAxis:[{type:'value',name:'kW'},{type:'value',name:'元/kWh'}],
+    series:[
+      {name:'负荷',type:'line',smooth:true,data:load,areaStyle:{opacity:.15}},
+      {name:'光伏',type:'line',smooth:true,data:pv,areaStyle:{opacity:.15}},
+      {name:'电价',type:'line',yAxisIndex:1,smooth:true,data:price,itemStyle:{color:'#f59e0b'}}]});
+  // SOC
+  const eta=(+document.getElementById('eta').value||90)/100,emax=(+document.getElementById('pwrmax').value||PWR)*DT,socmax=+document.getElementById('socmax').value||12000;
+  let soc=6000,socArr=[soc];
+  for(let i=0;i<24;i++){const net=load[i]-pv[i]; if(net<0)soc=Math.min(socmax,soc+Math.min(-net*DT*eta,emax*eta)); else soc=Math.max(1200,soc-Math.min(net*DT/eta,emax)); socArr.push(soc);}
+  charts.soc.setOption({tooltip:{trigger:'axis'},grid:{left:50,right:20,top:20,bottom:28},
+    xAxis:{data:['0:00',...x]},yAxis:{type:'value',name:'kWh'},
+    series:[{name:'SOC',type:'line',step:'end',data:socArr,areaStyle:{opacity:.2},lineStyle:{color:'#2563eb'}}]});
+  // 购电构成
+  let gridBuy=pv.reduce((a,b)=>a+b*DT,0);
+  let batBuy=Math.max(0,pv.reduce((a,b)=>a+b*DT,0)); // 光伏自用示意
+  const netBuy=load.reduce((s,l,i)=>s+Math.max(0,(l-pv[i]))*DT,0);
+  charts.pie.setOption({tooltip:{trigger:'item'},legend:{bottom:0},series:[{
+    type:'pie',radius:['40%','68%'],center:['50%','45%'],data:[
+      {name:'光伏自用',value:batBuy,itemStyle:{color:'#38bdf8'}},
+      {name:'购电补缺',value:netBuy,itemStyle:{color:'#2563eb'}},
+      {name:'储能调节份额',value:Math.round(batBuy*0.25),itemStyle:{color:'#16a34a'}}]}]});
+}
+function runAll(){runAnalysis();renderCharts();}
+
+// ---------- 菜单 ----------
+document.querySelectorAll('.menu button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.menu button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  const p=b.dataset.panel;
+  document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('show',x.id==='panel-'+p));
+  Object.values(charts).forEach(c=>c&&c.resize());
+}));
+
+initTable();resetManual();initCharts();loadExample();
+</script>
+</body>
+</html>

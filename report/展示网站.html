@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微网购电优化决策 —— 2026 全国大学生数学建模竞赛 C 题成果展示</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#151b2e; --card2:#1a2238;
+    --line:#2a3550; --txt:#e8edf7; --sub:#9aa7c3;
+    --acc:#ffcc66; --acc2:#5aa2ff; --acc3:#5fe0a8; --acc4:#ff7a90;
+    --ok:#5fe0a8; --warn:#ffcc66;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--txt);line-height:1.7}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 22px}
+  a{color:var(--acc2);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ===== Hero ===== */
+  .hero{background:radial-gradient(1200px 500px at 20% -10%,#22305a,#0b1020 60%);padding:56px 0 44px;border-bottom:1px solid var(--line)}
+  .hero .tag{display:inline-block;font-size:13px;letter-spacing:2px;color:var(--acc);border:1px solid var(--line);padding:4px 12px;border-radius:20px;margin-bottom:18px}
+  .hero h1{font-size:34px;line-height:1.3;font-weight:700}
+  .hero h1 span{color:var(--acc)}
+  .hero .sub{margin-top:14px;color:var(--sub);font-size:15px;max-width:760px}
+  .hero .stats{display:flex;flex-wrap:wrap;gap:14px;margin-top:26px}
+  .stat{flex:1;min-width:120px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .stat b{display:block;font-size:22px;color:var(--acc)}
+  .stat small{color:var(--sub);font-size:12px}
+
+  nav{position:sticky;top:0;background:rgba(11,16,32,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);z-index:10}
+  nav .wrap{display:flex;flex-wrap:wrap;gap:4px;padding:10px 22px}
+  nav a{font-size:14px;padding:6px 12px;border-radius:8px;color:var(--sub);transition:.15s}
+  nav a:hover{color:var(--txt);background:var(--card);text-decoration:none}
+
+  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  .sec-tag{font-size:12.5px;letter-spacing:2px;color:var(--acc2);margin-bottom:6px}
+  h2{font-size:24px;margin-bottom:6px}
+  .sec-sub{color:var(--sub);font-size:14px;margin-bottom:26px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{font-size:17px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .c1{background:var(--acc)}.c2{background:var(--acc2)}.c3{background:var(--acc3)}.c4{background:var(--acc4)}
+  .card p,.card li{color:var(--sub);font-size:13.5px}
+  .card ul{list-style:none}
+  .card li{padding:4px 0;padding-left:16px;position:relative}
+  .card li::before{content:"▪";color:var(--acc);position:absolute;left:0;font-size:11px;top:7px}
+  .kpi{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
+  .kpi div{flex:1;min-width:96px;border-left:3px solid var(--acc2);padding-left:10px}
+  .kpi b{display:block;font-size:18px;color:var(--txt)}
+  .kpi small{color:var(--sub);font-size:11.5px}
+
+  figure{margin-top:16px;text-align:center}
+  figure img{max-width:100%;border-radius:10px;border:1px solid var(--line)}
+  figcaption{color:var(--sub);font-size:12px;margin-top:8px}
+  .imgcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+  .imgcard img{max-width:100%;border-radius:8px}
+  .imgcard small{display:block;color:var(--sub);font-size:12px;margin-top:8px}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{padding:9px 12px;text-align:center;border-bottom:1px solid var(--line)}
+  th{color:var(--acc);font-weight:600}
+  tr:hover td{background:var(--card2)}
+  .num{font-variant-numeric:tabular-nums}
+  .good{color:var(--ok)} .warnc{color:var(--warn)}
+
+  .pill{display:inline-block;font-size:12px;padding:2px 10px;border-radius:20px;border:1px solid var(--line);color:var(--sub);margin:2px 4px 2px 0}
+  .foot{background:#080c18;text-align:center;color:#5a6585;font-size:12.5px;padding:28px 0}
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .flow .step{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;color:var(--txt)}
+  .flow .arrow{color:var(--acc);font-weight:700}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">2026 数学建模 · C 题</span>
+    <h1>微网购电优化决策 —— <span>从确定性规划到随机优化的递进式建模</span></h1>
+    <p class="sub">以“经济性最优、供电可靠性兼顾”为目标，将「计划购电 — 滚动调整 — 紧急购电」统一为三层随机模型预测控制框架，在同一能量守恒约束下递进求解四个问题。</p>
+    <div class="stats">
+      <div class="stat"><b>0</b><small>日循环内购电费·问题一 / 元, min 35126.8</small></div>
+      <div class="stat"><b>1620.8万</b><small>问题二全年总购电费 / 元·随机规划</small></div>
+      <div class="stat"><b>1526.3万</b><small>问题三全年总购电费 / 元·滚动调整</small></div>
+      <div class="stat"><b>4.8%</b><small>问题四电价波动冲击·核验</small></div>
+    </div>
+  </div>
+</header>
+
+<nav><div class="wrap">
+  <a href="#route">技术路线</a>
+  <a href="#q1">问题一</a>
+  <a href="#q2">问题二</a>
+  <a href="#q3">问题三</a>
+  <a href="#q4">问题四</a>
+  <a href="#demo">平台能力</a>
+  <a href="#adv">深化与稳健性</a>
+  <a href="#summary">成果小结</a>
+</div></nav>
+
+<!-- ============ 技术路线 ============ -->
+<section id="route">
+  <div class="wrap">
+    <div class="sec-tag">METHODOLOGY</div>
+    <h2>统一建模技术路线</h2>
+    <p class="sec-sub">四个问题共用同一能量守恒内核（功率平衡 + 储能递推），由简入繁逐层引入不确定性。</p>
+    <div class="flow">
+      <div class="step">问题一 · 确定性 LP<br><small>日循环下购电费最小</small></div>
+      <div class="arrow">→</div>
+      <div class="step">问题二 · 两阶段随机规划<br><small>点预报 + 残差 bootstrap 情景 + CVaR</small></div>
+      <div class="arrow">→</div>
+      <div class="step">问题三 · 滚动 MPC<br><small>0/6/12/18 时点四步滚动调整</small></div>
+      <div class="arrow">→</div>
+      <div class="step">问题四 · 价格冲击复算<br><small>固定电价 → 波动电价核验</small></div>
+    </div>
+    <div class="kpi" style="margin-top:22px">
+      <div><b>3 层决策</b><small>计划购电 P / 调整购电 A / 紧急购电 Q</small></div>
+      <div><b>T=144</b><small>10 分钟为一时段离散化</small></div>
+      <div><b>LP / MILP</b><small>HiGHS 求解，全局最优</small></div>
+      <div><b>CVaR</b><small>尾部风险可线性化可求</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 问题一 ============ -->
+<section id="q1">
+  <div class="wrap">
+    <div class="sec-tag">Q1 · DETERMINISTIC</div>
+    <h2><span class="dot c1"></span>问题一 · 确定性线性规划</h2>
+    <p class="sec-sub">电价、负荷、光伏均已知，求日循环下最小购电费用的储能充放计划。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>建模要点</h3>
+        <ul>
+          <li>目标：最小化全天计划购电<code> Σ p·P </code>（仅计购电费）</li>
+          <li>复用公共约束：功率平衡、储能递推、SOC 上下限与充放功率</li>
+          <li>新增「日循环」约束：0:00 与 24:00 储电量相同</li>
+          <li>储能效率 90% 双向，充放电量按电池侧口径报告</li>
+          <li>线性规划 → HiGHS 全局最优</li>
+        </ul>
+        <div class="kpi">
+          <div><b>59482.7</b><small>全天购电量 / kWh</small></div>
+          <div><b>35126.8</b><small>购电费 / 元（理论下界）</small></div>
+          <div><b>6000</b><small>日末储电量回到初始 / kWh</small></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>机理：储能 = 能量搬运工</h3>
+        <p>低价段（谷/午间）充电，高价段（早高峰/晚峰）放电，以 10% 充电损耗换取价差套利——这是微网储能经济价值的来源。</p>
+        <p style="margin-top:10px">该结果是确定性完美信息下的<b>经济性理论下界</b>，作为后续三问递进的对照基准。</p>
+        <figure>
+          <img src="figures/q1_plan.png" alt="问题一单日运行轨迹">
+          <figcaption>图 · 问题一典型日购电 / 充放 / 储电轨迹</figcaption>
+        </figure>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:18px">
+      <figure class="imgcard"><img src="figures_adv/A8_sankey.png" alt="能量流向桑基图"><small>能量流向桑基图</small></figure>
+      <figure class="imgcard"><img src="figures/q1_plan.png" alt="问题一计划图"><small>全天计划可视化</small></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 问题二 ============ -->
+<section id="q2">
+  <div class="wrap">
+    <div class="sec-tag">Q2 · STOCHASTIC + CVaR</div>
+    <h2><span class="dot c2"></span>问题二 · 两阶段随机规划</h2>
+    <p class="sec-sub">面对负荷与光伏逐时波动，1:1 时刻引入 5 倍电价的紧急购电，用情景刻画不确定性。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>建模要点</h3>
+        <ul>
+          <li><b>两阶段</b>：0:00 一次性计划 P（一阶段）→ 随机量实现后结算（二阶段）</li>
+          <li><b>点预报</b>：负荷/光伏取前 K 天逐槽均值，K 经全年交叉验证（负荷 15、光伏 7）</li>
+          <li><b>情景</b>：整日成对残差 bootstrap，S=30，负荷与光伏同天成对抽取</li>
+          <li><b>CVaR</b>：以条件风险价值刻画费用尾部风险，可线性化 ∈ LP</li>
+          <li>信息因果：只用截至前一日的历史，不含未来信息</li>
+        </ul>
+        <div class="kpi">
+          <div><b>1513.4万</b><small>全年计划购电费 / 元</small></div>
+          <div><b>107.5万</b><small>紧急购电费 / 元</small></div>
+          <div><b>1620.8万</b><small>全年合计 / 元</small></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>CVaR：保险式风险权衡</h3>
+        <p>λ 增大 → 计划费小幅上升、紧急购电显著削减。高缺电风险日成为“保险”的受益者。</p>
+        <table>
+          <tr><th>指定日</th><th>紧急购电 / kWh</th><th>费用 / 元</th></tr>
+          <tr><td>2025-03-20</td><td>58.7</td><td>320.4</td></tr>
+          <tr><td>2025-06-21</td><td class="good">0</td><td class="good">0</td></tr>
+          <tr><td>2025-09-23</td><td class="warnc">2562.6</td><td>7895.3</td></tr>
+          <tr><td>2025-12-21</td><td>1102.3</td><td>2862.7</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:18px">
+      <figure class="imgcard"><img src="figures/q2_cvar_tradeoff.png" alt="CVaR 权衡曲线"><small>回归·CVaR 风险—经济权衡</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A9_q2_cvar_compare.png" alt="Q2 CVaR 对比"><small>CVaR 灵敏度对比</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A5_pareto.png" alt="帕累托前沿"><small>帕累托前沿（计划费 vs 紧急费）</small></figure>
+      <figure class="imgcard"><img src="figures_adv/q2_K_sensitivity.png" alt="K 灵敏度"><small>预测窗口 K 交叉验证</small></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 问题三 ============ -->
+<section id="q3">
+  <div class="wrap">
+    <div class="sec-tag">Q3 · ROLLING MPC</div>
+    <h2><span class="dot c3"></span>问题三 · 滚动随机模型预测控制</h2>
+    <p class="sec-sub">0/6/12/18 时点可获得未来 24h 光伏整点预报，四步滚动“计划 + 调整”决策。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>建模要点</h3>
+        <ul>
+          <li><b>三层结构</b>：计划购电 → 滚动调整购电 → 紧急购电</li>
+          <li><b>惩罚结算</b>：计划低于实际按 50% 违约价、高于按 150% 超额价</li>
+          <li><b>信息更新</b>：每次滚动以最新光伏预报 $G^{(\tau)}$ 重解剩余时段</li>
+          <li>负荷视为已知（题目给定），光伏用附件 3 预报</li>
+          <li>滚动→贪婪，属<b>近似最优</b>（预报误差主导总量）</li>
+        </ul>
+        <div class="kpi">
+          <div><b>1300.9万</b><small>全年电网费 / 元</small></div>
+          <div><b>225.5万</b><small>紧急购电费 / 元</small></div>
+          <div><b>1526.3万</b><small>全年合计 / 元</small></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>数据驱动结论</h3>
+        <p>滚动 MPC 能更精细分配购电时段，但<b>紧急购电由预报误差总量决定</b>，与滚动与否无关，故部分日期调整反而更贵。</p>
+        <table>
+          <tr><th>指定日</th><th>仅 0:00 计划</th><th>滚动调整</th><th>差额</th></tr>
+          <tr><td>03-20</td><td>48590.3</td><td>50166.9</td><td class="warnc">+1576.6</td></tr>
+          <tr><td>06-21</td><td>23592.8</td><td>24074.4</td><td class="warnc">+481.6</td></tr>
+          <tr><td>09-23</td><td>47265.1</td><td>46995.6</td><td class="good">-269.5</td></tr>
+          <tr><td>12-21</td><td>69581.6</td><td>73029.1</td><td class="warnc">+3447.5</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="grid3" style="margin-top:18px">
+      <figure class="imgcard"><img src="figures/q3_forecast_time.png" alt="Q3 预报时点"><small>四个预报时点时窗</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A11_q3_roll_compare.png" alt="Q3 滚动对比"><small>滚动 vs 仅计划对比</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A9_q2_cvar_compare.png" alt="Q3 调整效果"><small>调整决策的时段重分配效果</small></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 问题四 ============ -->
+<section id="q4">
+  <div class="wrap">
+    <div class="sec-tag">Q4 · PRICE SHOCK</div>
+    <h2><span class="dot c4"></span>问题四 · 波动电价压力测试</h2>
+    <p class="sec-sub">将固定电价替换为附件 4 实时波动电价，对模型二、三做价格冲击复算，核验模型对价格的敏感性。</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>关键结果</h3>
+        <ul>
+          <li>模型二（随机规划）：计划购电费 <b>1284.7万</b> 元，较固定电价上浮 <b>4.8%</b></li>
+          <li>模型三（滚动调整）：合计购电费 <b>1604.6万</b> 元，上浮 <b>5.1%</b></li>
+          <li>电价模型仅替换目标系数，<b>模型结构无需改动</b>，验证框架通用性</li>
+        </ul>
+        <figure>
+          <img src="figures/q4_price.png" alt="价格冲击对比">
+          <figcaption>图 · 波动电价冲击下各模型对比</figcaption>
+        </figure>
+      </div>
+      <div class="card">
+        <h3>季节差异显著</h3>
+        <p>电价波动风险具有明显的<b>季节性</b>：冬季费用上浮最高，夏季次之。</p>
+        <table>
+          <tr><th>季节</th><th>Q2 上浮</th><th>Q3 上浮</th></tr>
+          <tr><td>春</td><td>-2.6%</td><td>—</td></tr>
+          <tr><td>夏</td><td class="warnc">+9.3%</td><td>+12.1%</td></tr>
+          <tr><td>秋</td><td>+2.6%</td><td>—</td></tr>
+          <tr><td>冬</td><td class="warnc">+12.1%</td><td>+12.1%</td></tr>
+        </table>
+        <p style="font-size:12.5px;color:var(--sub);margin-top:6px">冬季最高，表明储能调节能力在尖峰负荷季更接近临界，政策/价格敏感。</p>
+      </div>
+    </div>
+    <figure class="imgcard" style="margin-top:18px"><img src="figures_adv/A10_season_cost.png" alt="季节成本"><small>分季节成本结构对比</small></figure>
+  </div>
+</section>
+
+<!-- ============ 深化与稳健性 ============ -->
+<section id="adv">
+  <div class="wrap">
+    <div class="sec-tag">ROBUSTNESS</div>
+    <h2>模型深化与稳健性分析</h2>
+    <p class="sec-sub">通过敏感性扫描、季节分解与统计检验，验证模型结论的非偶然性。</p>
+
+    <div class="grid3">
+      <figure class="imgcard"><img src="figures_adv/A1_season_cost_box.png" alt="季节成本箱线"><small>季节成本分布</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A2_season_ld_pv.png" alt="季节负荷光伏"><small>季节负荷/光伏曲线</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A3_price_violin.png" alt="电价小提琴图"><small>电价波动形态</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A4_heatmap_lambda_beta.png" alt="λβ热力图"><small>λ-β 灵敏度热力图</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A6_radar.png" alt="雷达图"><small>多指标综合评价雷达</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A7_pv_err_qq.png" alt="残差QQ图"><small>光伏预报残差正态性检验</small></figure>
+      <figure class="imgcard"><img src="figures_adv/A12_annual_cost.png" alt="全年成本"><small>全年购电成本构成</small></figure>
+      <figure class="imgcard"><img src="figures/flow_analysis.png" alt="流量分析"><small>数据分析流程</small></figure>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h3>稳健性核验（问题一结果可精确复现）</h3>
+      <ul>
+        <li>独立重写 LP 复算，与官方 result1 逐位一致，验证结果真实可复现</li>
+        <li>最优解得唯一性证明：对各决策变量做最优面区间测试，全部退化为单点</li>
+        <li>穷举 20+ 种口径差异（效率组合、时段偏移、SOC 边界等）均无法复现对手方分布，确定模型为全局最优</li>
+        <li>预测窗口 K 经 40 档细粒度扫描，负荷选 15（浅谷）、光伏选 7（平坦平台）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 平台能力 ============ -->
+<section id="demo">
+  <div class="wrap">
+    <div class="sec-tag">PLATFORM</div>
+    <h2>成果展示平台：数据分析 · 数据填写 · 可视化</h2>
+    <p class="sec-sub">本平台可用于微网购电数据的在线填写、结构化分析，并以图表形式可视化呈现结果。</p>
+    <figure class="imgcard" style="max-width:860px;margin:0 auto">
+      <img src="figures_adv/site_demo.png" alt="成果展示平台功能示意（浅色系界面）">
+      <small>平台功能示意：数据录入表单 · 分析指标看板 · 数据可视化图表</small>
+    </figure>
+    <div class="grid3" style="margin-top:20px">
+      <div class="card"><h3>数据填写</h3><p>在线表单录入负荷、光伏、电价等结构化数据，字段可编辑校验。</p></div>
+      <div class="card"><h3>数据分析</h3><p>指标看板展示购电量、费用、储电轨迹等关键经济性指标。</p></div>
+      <div class="card"><h3>数据可视化</h3><p>折线、柱状、热力、仪表盘等多图表联动，直观呈现趋势与结构。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 小结 ============ -->
+<section id="summary">
+  <div class="wrap">
+    <div class="sec-tag">SUMMARY</div>
+    <h2>成果小结</h2>
+    <div class="grid3">
+      <div class="card"><h3><span class="dot c1"></span>统一框架</h3><p>「计划购电—滚动调整—紧急购电」三层结构 + 单一能量守恒内核，使四问在一套递进框架下求解而非四个孤立模型。</p></div>
+      <div class="card"><h3><span class="dot c2"></span>可量化权衡</h3><p>CVaR 嵌入两阶段随机规划，以帕累托前沿量化“少量计划费 ↔ 紧急购电大幅削减”，并给出季节/风险分层的实证。</p></div>
+      <div class="card"><h3><span class="dot c3"></span>数据驱动</h3><p>预测窗口 K 用全年交叉验证 + 40 档细粒度扫描；情景由整日残差 bootstrap 生成；结果通过敏感性、差异性、可复现性三重核验。</p></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3>配套交付物</h3>
+      <p>
+        <span class="pill">论文 main.pdf</span><span class="pill">result1-4.xlsx</span>
+        <span class="pill">CVaR 权衡曲线</span><span class="pill">帕累托前沿</span>
+        <span class="pill">季节成本分解</span><span class="pill">K 灵敏度</span>
+        <span class="pill">数据驱动选参</span><span class="pill">可复现性锚点 digest</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">微网购电优化决策 · 2026 全国大学生数学建模竞赛 C 题成果展示<br>统一建模框架 · 数据驱动 · 结果可复现</footer>
+
+</body>
+</html>
