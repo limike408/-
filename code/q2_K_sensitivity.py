@@ -57,14 +57,14 @@ for ax, nrm, Kstar, ttl, cc, wintxt in [
     ax.axvline(Kstar, color='k', ls='--', lw=1.1)
     ax.annotate(f'$K^*$={Kstar}\nnRMSE={nrm[Kstar-1]:.4f}',
                 xy=(Kstar, nrm[Kstar-1]), xytext=(Kstar + 2.5, nrm[Kstar-1]),
-                fontsize=12, arrowprops=dict(arrowstyle='->', lw=0.9, color='k'))
+                fontsize=13, arrowprops=dict(arrowstyle='->', lw=0.9, color='k'))
     ax.text(Ks[-1], np.max(nrm) * 0.98, wintxt, ha='right', va='top',
-            fontsize=11, color='#555555')
-    ax.set_ylabel('平均归一化 RMSE', fontsize=13)
+            fontsize=12, color='#555555')
+    ax.set_ylabel('平均归一化 RMSE', fontsize=14)
     ax.set_title(ttl, fontsize=14)
     ax.tick_params(labelsize=12)
     ax.grid(alpha=0.3)
-axes[1].set_xlabel('预测窗口 K（天）', fontsize=13)
+axes[1].set_xlabel('预测窗口 K（天）', fontsize=14)
 fig.tight_layout()
 fig.savefig(os.path.join(OUT, 'q2_K_sensitivity.png'), dpi=200)
 plt.close(fig)

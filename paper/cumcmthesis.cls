@@ -592,8 +592,8 @@ Just choose `xelatex', no `pdflatex' or `latex' and so on.}
 \newcommand*{\mcm@cap@tablename}{表}
 \newcommand*{\mcm@cap@appendixname}{附录}
 \newcommand*{\mcm@cap@abstractname}{摘要}
- %%%  中文关键字
-\newcommand*{\mcm@cap@keywordsname}{关键字}
+ %%%  中文关键词
+\newcommand*{\mcm@cap@keywordsname}{关键词}
 
  %%% 承诺书中的常量
 \newcommand*\mcm@commit@string@headname{赛区评阅编号（由赛区组委会填写）：}

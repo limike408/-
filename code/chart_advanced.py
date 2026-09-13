@@ -112,14 +112,14 @@ for ai, lam in enumerate(LAMS):
 # 热力图（总费用）
 fig, ax = plt.subplots(figsize=(8.2, 5.4))
 im = ax.imshow(grid, aspect='auto', cmap='YlOrRd')
-ax.set_xticks(range(len(BETS))); ax.set_xticklabels([str(b) for b in BETS], fontsize=11)
-ax.set_yticks(range(len(LAMS))); ax.set_yticklabels([str(l) for l in LAMS], fontsize=11)
+ax.set_xticks(range(len(BETS))); ax.set_xticklabels([str(b) for b in BETS], fontsize=12)
+ax.set_yticks(range(len(LAMS))); ax.set_yticklabels([str(l) for l in LAMS], fontsize=12)
 for r in range(len(LAMS)):
     for c in range(len(BETS)):
-        ax.text(c, r, f'{grid[r,c]/1e4:.1f}', ha='center', va='center', fontsize=11)
-ax.set_xlabel('CVaR 置信水平 β', fontsize=12); ax.set_ylabel('风险权重 λ', fontsize=12)
-ax.set_title('图A4  λ-β 对当日总费用（万元）的敏感性（2025-03-20）', fontsize=13)
-cb = fig.colorbar(im, ax=ax); cb.set_label('总费用（万元）', fontsize=12)
+        ax.text(c, r, f'{grid[r,c]/1e4:.1f}', ha='center', va='center', fontsize=12)
+ax.set_xlabel('CVaR 置信水平 β', fontsize=13); ax.set_ylabel('风险权重 λ', fontsize=13)
+ax.set_title('图A4  λ-β 对当日总费用（万元）的敏感性（2025-03-20）', fontsize=14)
+cb = fig.colorbar(im, ax=ax); cb.set_label('总费用（万元）', fontsize=13)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A4_heatmap_lambda_beta.png'), dpi=150); plt.close(fig)
 
 # 帕累托前沿（β=0.9）
@@ -129,9 +129,9 @@ for ai, lam in enumerate(LAMS):
     px, py = plan_arr[ai,2]/1e4, emerg_arr[ai,2]/1e4
     dy = (8 if ai % 2 == 0 else -14) if ai < len(LAMS) - 1 else -14
     ax.annotate(f'λ={lam}', (px, py), textcoords='offset points', xytext=(10, dy),
-                fontsize=11, bbox=dict(fc='white', ec='none', alpha=0.7, pad=1))
-ax.set_xlabel('计划购电费（万元）', fontsize=12); ax.set_ylabel('紧急购电费（万元）', fontsize=12)
-ax.set_title('图A5  计划购电费—紧急购电费 帕累托前沿（β=0.9, 2025-03-20）', fontsize=13)
+                fontsize=12, bbox=dict(fc='white', ec='none', alpha=0.7, pad=1))
+ax.set_xlabel('计划购电费（万元）', fontsize=13); ax.set_ylabel('紧急购电费（万元）', fontsize=13)
+ax.set_title('图A5  计划购电费—紧急购电费 帕累托前沿（β=0.9, 2025-03-20）', fontsize=14)
 ax.tick_params(labelsize=11)
 ax.grid(alpha=0.3)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A5_pareto.png'), dpi=150); plt.close(fig)
@@ -146,10 +146,10 @@ for k, (name, v) in enumerate(vals.items()):
     vv = v + v[:1]
     ax.plot(ang, vv, label=name, color=CB[k], lw=1.8)
     ax.fill(ang, vv, color=CB[k], alpha=0.12)
-ax.set_xticks(ang[:-1]); ax.set_xticklabels(dims, fontsize=12)
-ax.set_ylim(0, 10); ax.set_yticks([2,4,6,8,10]); ax.set_yticklabels(['2','4','6','8','10'], fontsize=10)
-ax.set_title('图A6  四种模型在五维度上的对比（半定量评分）', fontsize=13)
-ax.legend(loc='upper right', bbox_to_anchor=(1.32, 1.12), fontsize=11)
+ax.set_xticks(ang[:-1]); ax.set_xticklabels(dims, fontsize=13)
+ax.set_ylim(0, 10); ax.set_yticks([2,4,6,8,10]); ax.set_yticklabels(['2','4','6','8','10'], fontsize=11)
+ax.set_title('图A6  四种模型在五维度上的对比（半定量评分）', fontsize=14)
+ax.legend(loc='upper right', bbox_to_anchor=(1.32, 1.12), fontsize=12)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, 'A6_radar.png'), dpi=150); plt.close(fig)
 
 # ================= 图A7 光伏预报误差 Q-Q =================
@@ -208,13 +208,13 @@ else:
         ax.add_patch(Rectangle((X0 - W, b), W, t - b, facecolor=SRC_COLOR[k],
                                edgecolor='black', linewidth=0.8, alpha=0.95))
         ax.text(X0 - W - 0.02, (t + b) / 2, f'{L_NAMES[k]}\n{L_VALS[k]:,.0f} kWh',
-                ha='right', va='center', fontsize=12)
+                ha='right', va='center', fontsize=13)
     for k, (t, b) in enumerate(RT):
         ax.add_patch(Rectangle((X1, b), W, t - b,
                                facecolor=['#444444', A8C[2], '#888888'][k],
                                edgecolor='black', linewidth=0.8, alpha=0.95))
         ax.text(X1 + W + 0.02, (t + b) / 2, f'{R_NAMES[k]}\n{R_VALS[k]:,.0f} kWh',
-                ha='left', va='center', fontsize=12)
+                ha='left', va='center', fontsize=13)
     rcur = {k: RT[k][0] for k in range(3)}
     lcur = {k: LT[k][0] for k in range(3)}
     for (s, t, v) in bands:

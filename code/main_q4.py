@@ -117,23 +117,68 @@ def run_q43():
                 tot_grid=tot_grid, tot_emerg=tot_emerg)
 
 
-def shell():
-    q42 = run_q42()
-    q43 = run_q43()
+def plot_price_figure():
+    """图18：附件4 波动电价（日均）曲线 vs 附件1 固定电价，叠加季节分带与季节均值标注。
+    仅依赖原始数据（附件1/附件4），不重新求解，可独立调用。"""
     dates4, price4 = data.load_attach4()
     a1 = data.load_attach1()
     mean_p = price4.mean(axis=1)
     x = np.arange(len(mean_p))
-    fig, ax = plt.subplots(figsize=(10, 4.5))
-    ax.plot(x, mean_p, lw=1.2, label='附件4 波动电价(日均)')
+
+    def _seas(d):
+        m = d.month
+        return {12: '冬', 1: '冬', 2: '冬', 3: '春', 4: '春', 5: '春',
+                6: '夏', 7: '夏', 8: '夏', 9: '秋', 10: '秋', 11: '秋'}[m]
+    seas = np.array([_seas(d) for d in dates4])
+    SORDER = ['春', '夏', '秋', '冬']
+    SCOL = {'春': '#2ca02c', '夏': '#ff7f0e', '秋': '#9467bd', '冬': '#1f77b4'}
+    bounds = [i - 0.5 for i in range(1, len(seas)) if seas[i] != seas[i - 1]]
+
+    def _segments(sel):
+        """把选中日期的下标按连续性切成 (i0, i1) 段（冬季跨年需分两段）。"""
+        idx = np.where(sel)[0]
+        if len(idx) == 0:
+            return []
+        out, start = [], idx[0]
+        for a, b in zip(idx[:-1], idx[1:]):
+            if b != a + 1:
+                out.append((start, a))
+                start = b
+        out.append((start, idx[-1]))
+        return out
+
+    fig, ax = plt.subplots(figsize=(10.5, 4.9))
+    # 季节底色带（与表1"波动日电价"列对应；冬季跨年分两段）
+    for s in SORDER:
+        for i0, i1 in _segments(seas == s):
+            ax.axvspan(i0 - 0.5, i1 + 0.5, color=SCOL[s], alpha=0.10)
+    ax.plot(x, mean_p, lw=1.3, color='k', label='附件4 波动电价(日均)')
     p_fix = float(a1['price'].mean())
-    ax.axhline(p_fix, color='r', ls='--', lw=1, label=f'附件1 固定电价（日均 {p_fix:.4f} 元/kWh）')
-    ax.set_xlabel('日期索引(1.1起)', fontsize=12); ax.set_ylabel('平均电价(元/kWh)', fontsize=12)
-    ax.set_title('问题4：波动电价(附件4)与固定电价(附件1)对比', fontsize=13)
-    ax.legend(fontsize=11); ax.grid(alpha=0.3)
+    ax.axhline(p_fix, color='r', ls='--', lw=1.3,
+               label=f'附件1 固定电价（日均 {p_fix:.4f} 元/kWh）')
+    # 季节均值虚线 + 数值标注（= 表1 波动日电价）；冬季跨年分两段绘制
+    for s in SORDER:
+        mv = mean_p[seas == s].mean()
+        for i0, i1 in _segments(seas == s):
+            ax.hlines(mv, i0 - 0.5, i1 + 0.5, color=SCOL[s], ls=':', lw=1.8)
+            ax.text((i0 + i1) / 2, mv + 0.012, f'{s}季 {mv:.3f}', ha='center',
+                    fontsize=11, color=SCOL[s],
+                    bbox=dict(fc='white', ec='none', alpha=0.75, pad=0.2))
+    for b in bounds:
+        ax.axvline(b, color='gray', ls='--', lw=0.8, alpha=0.6)
+    ax.set_xlabel('日期（2025年1月1日起，按季分带）', fontsize=13)
+    ax.set_ylabel('平均电价(元/kWh)', fontsize=13)
+    ax.set_title('问题4：附件4波动电价（日均）与附件1固定电价对比', fontsize=14)
+    ax.legend(fontsize=11, loc='upper right', ncol=2); ax.grid(alpha=0.3)
     ax.tick_params(labelsize=11)
     fig.tight_layout(); fig.savefig(os.path.join(C.FIG_DIR, 'q4_price.png'), dpi=150); plt.close(fig)
     print('图已存', os.path.join(C.FIG_DIR, 'q4_price.png'))
+
+
+def shell():
+    q42 = run_q42()
+    q43 = run_q43()
+    plot_price_figure()
 
 
 if __name__ == '__main__':

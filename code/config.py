@@ -35,6 +35,13 @@ def setup_plot_style():
     mpl = matplotlib
     mpl.rcParams['font.sans-serif'] = names + ['DejaVu Sans']
     mpl.rcParams['axes.unicode_minus'] = False
+    # 21.0：全局调大默认字号（脚本内显式 fontsize 仍优先）
+    mpl.rcParams['font.size'] = 12
+    mpl.rcParams['axes.labelsize'] = 13
+    mpl.rcParams['axes.titlesize'] = 14
+    mpl.rcParams['xtick.labelsize'] = 12
+    mpl.rcParams['ytick.labelsize'] = 12
+    mpl.rcParams['legend.fontsize'] = 12
 
 # ---- 时间离散 ----
 T_IN_DAY = 144           # 每天 10 分钟时段数
